@@ -59,10 +59,20 @@
         font-size: 11px;
         font-weight: 900;
         letter-spacing: 2px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
       }
       .level b {
-        color: #fff;
-        font-size: 15px;
+        color: var(--laser, #52e9ff);
+        font-size: 30px;
+        line-height: 1;
+        font-weight: 1000;
+        letter-spacing: -1px;
+        text-shadow:
+          0 3px 2px #000,
+          0 0 8px var(--laser, #52e9ff),
+          0 0 20px var(--laser-glow, #18cfff66);
       }
       .meters {
         display: grid;
@@ -353,6 +363,8 @@
         -webkit-text-fill-color: #73f5ff !important;
         filter: none !important;
         text-shadow:
+          0 5px 3px #000d,
+          0 9px 12px #000b,
           0 0 8px #fff,
           0 0 20px #25eaff,
           0 0 38px #ff42d0;
@@ -437,6 +449,8 @@
         font-weight: 1000;
         letter-spacing: 0;
         text-shadow:
+          0 5px 3px #000d,
+          0 9px 12px #000b,
           0 0 8px #fff,
           0 0 20px #25eaff,
           0 0 38px #ff42d0;
@@ -608,6 +622,9 @@
       }
       .result-best b {
         color: #72f6ff;
+        text-shadow:
+          0 2px 2px #000,
+          0 0 9px #25eaff88;
       }
       @keyframes bestPop {
         0% {
@@ -1189,7 +1206,7 @@
               distanceBadge = document.querySelector("#distance"),
               brokenLabel = result.querySelector(".eyebrow");
             finalScore.style.cssText =
-              "color:#73f5ff!important;-webkit-text-fill-color:#73f5ff!important;background:none!important;text-shadow:0 0 8px #fff,0 0 20px #25eaff,0 0 38px #ff42d0";
+              "color:#73f5ff!important;-webkit-text-fill-color:#73f5ff!important;background:none!important;text-shadow:0 5px 3px #000d,0 9px 12px #000b,0 0 8px #fff,0 0 20px #25eaff,0 0 38px #ff42d0";
             distanceBadge.style.cssText =
               "display:table!important;margin:10px auto 26px!important;padding:10px 20px!important;border:2px solid #48efff!important;border-radius:999px!important;background:#0b1838!important;color:#f2fbff!important;box-shadow:0 0 14px #2ce8ff55,inset 0 0 16px #ff4bd81f";
             brokenLabel.textContent = isBest
