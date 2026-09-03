@@ -1035,8 +1035,11 @@
       document.querySelector("#share-score").onclick = async () => {
         const runScore = Math.floor(game?.score || 0).toLocaleString(),
           runDistance = Math.floor((game?.distance || 0) / 10),
+          runSize = Math.round(game?.ringRadius || 0),
+          runSpeed = ((game?.speed || 54) / 54).toFixed(1),
+          runLevel = Math.floor((game?.score || 0) / STAGE) + 1,
           shareUrl = location.origin + location.pathname,
-          shareText = `I scored ${runScore} and threaded ${runDistance}m in THREAD by One Thumb Arcade. Can you beat me?`;
+          shareText = `I scored ${runScore} in THREAD by One Thumb Arcade!\n\n${runDistance}m threaded · ${runSize}px size · ${runSpeed}× speed · Level ${runLevel}\n\nCan you beat me?`;
         try {
           if (navigator.share) {
             await navigator.share({ title: "THREAD high score", text: shareText, url: shareUrl });
