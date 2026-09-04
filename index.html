@@ -357,20 +357,23 @@
       }
       .result-actions {
         display: grid;
-        grid-template-columns: 1.65fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
       }
       .result-actions button {
         min-width: 0;
       }
+      .result-actions #again {
+        background: linear-gradient(100deg, #32efff 0%, #78f7dc 100%) !important;
+      }
       #home-button {
-        color: #75f4ff !important;
-        background: #09152ceF !important;
-        border: 1px solid #45eeff99 !important;
+        color: #030713 !important;
+        background: linear-gradient(100deg, #78f7dc 0%, #ff53d5 100%) !important;
+        border: 1px solid #eaffff !important;
         box-shadow:
-          0 7px 0 #030817,
-          0 0 20px #2ce8ff35 !important;
-        font-size: 15px;
+          0 7px 0 #08768b,
+          0 0 24px #ff4bd844 !important;
+        font-size: 16px;
       }
       .hidden {
         display: none;
