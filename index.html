@@ -1153,8 +1153,7 @@
           const q = r * z;
           ctx.rect(x - q, y - q, q * 2, q * 2);
         } else if (s === 1) ctx.arc(x, y, r * 0.92 * z, 0, TAU);
-        else if (s === 2) ctx.ellipse(x, y, r * 0.78 * z, r * 1.2, 0, 0, TAU);
-        else if (s === 3) {
+        else if (s === 2) {
           const a = r * 0.68 * z,
             b = r * 1.12;
           ctx.moveTo(x, y - b);
@@ -1190,9 +1189,9 @@
           ringY = Math.min(height * 0.6, height - 225),
           cr = Math.min(width * 0.4, 190),
           stage = Math.floor(g.score / STAGE) + 1,
-          s = (stage - 1) % 5,
+          s = (stage - 1) % 4,
           z = Math.max(0.74, 1 - (stage - 1) * 0.024),
-          sw = [1, 0.92, 0.78, 0.68, 0.56][s] * z,
+          sw = [1, 0.92, 0.68, 0.56][s] * z,
           laser = LASERS[(stage - 1) % 5];
         hud.style.setProperty("--laser", laser[0]);
         hud.style.setProperty("--laser-soft", laser[0] + "24");
