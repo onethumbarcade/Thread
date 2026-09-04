@@ -1080,6 +1080,7 @@
           runSeed,
           runMode === "daily" ? hashSeed(runSeed) % 4 : 0,
         );
+        previous = performance.now();
         if (runMode === "daily" && runTrack) {
           try {
             const key = `thread-daily-attempts-${runTrack}`;
@@ -1218,7 +1219,7 @@
         g.effects.push({ x, y, text, color, life: 1 });
       }
       function frame(time) {
-        const dt = Math.min(0.033, (time - previous) / 1000);
+        const dt = Math.max(0, Math.min(0.033, (time - previous) / 1000));
         previous = time;
         const g = game || fresh(),
           cx = width / 2,
