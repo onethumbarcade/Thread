@@ -8,6 +8,10 @@
     />
     <meta name="theme-color" content="#03050d" />
     <title>THREAD — One Thumb Arcade</title>
+    <script>
+      if (!new URLSearchParams(location.search).has("mode"))
+        location.replace("update-2-preview.html");
+    </script>
     <style>
       * {
         box-sizing: border-box;
@@ -891,6 +895,30 @@
         lastHud = 0,
         audio,
         optionsReturn;
+      const runParams = new URLSearchParams(location.search),
+        runMode = runParams.get("mode") || "generated",
+        runTrack = runParams.get("track"),
+        runCode = runParams.get("seed"),
+        runSeed =
+          runMode === "daily"
+            ? `daily-${runTrack || 1}`
+            : runCode || `free-${Date.now()}`;
+      function hashSeed(value) {
+        let h = 2166136261;
+        for (const ch of String(value)) {
+          h ^= ch.charCodeAt(0);
+          h = Math.imul(h, 16777619);
+        }
+        return h >>> 0;
+      }
+      function seededRandom(seed) {
+        return function () {
+          let t = (seed += 0x6d2b79f5);
+          t = Math.imul(t ^ (t >>> 15), t | 1);
+          t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
       let settings = { sfx: true, music: true, haptics: true, reduced: false },
         best = 0;
       try {
@@ -917,21 +945,21 @@
         });
         document.body.classList.toggle("reduced-motion", !!settings.reduced);
       }
-      function extend(n, target) {
+      function extend(n, target, random = Math.random) {
         while ((n.length - 1) * GAP < target) {
           const i = n.length,
             d = Math.min(1.5, i / 200),
             max = Math.min(1.18, 0.28 + d * 0.68),
             prev = n[i - 1] - n[i - 2];
-          let p = prev * 0.2 + (Math.random() * 2 - 1) * max,
+          let p = prev * 0.2 + (random() * 2 - 1) * max,
             min = d > 0.35 ? 0.08 + d * 0.13 : 0;
-          if (Math.abs(p) < min) p = (Math.random() < 0.5 ? -1 : 1) * min;
+          if (Math.abs(p) < min) p = (random() < 0.5 ? -1 : 1) * min;
           n.push(n[i - 1] + Math.max(-max, Math.min(max, p)));
         }
       }
-      function course() {
+      function course(random = Math.random) {
         const n = [0, 0.15];
-        extend(n, 3400);
+        extend(n, 3400, random);
         return n;
       }
       function angle(n, y) {
@@ -941,22 +969,23 @@
           e = t * t * (3 - 2 * t);
         return n[i] + (n[i + 1] - n[i]) * e;
       }
-      function bonus(y) {
-        const bomb = Math.random() < 0.22,
+      function bonus(y, random = Math.random) {
+        const bomb = random() < 0.22,
           k = bomb
             ? "bomb"
             : ["cherry", "strawberry", "banana", "cake"][
-                Math.floor(Math.random() * 4)
+                Math.floor(random() * 4)
               ];
         return {
           y,
           kind: k,
-          side: Math.random() < 0.5 ? -1 : 1,
-          offset: bomb ? 88 + Math.random() * 22 : 28 + Math.random() * 15,
+          side: random() < 0.5 ? -1 : 1,
+          offset: bomb ? 88 + random() * 22 : 28 + random() * 15,
           collected: false,
         };
       }
-      function fresh() {
+      function fresh(seed = null, shapeOffset = 0) {
+        const random = seed == null ? Math.random : seededRandom(hashSeed(seed));
         return {
           running: true,
           stage: 1,
@@ -966,13 +995,15 @@
           ringRadius: 34,
           energy: 100,
           speed: 54,
-          nodes: course(),
+          random,
+          shapeOffset,
+          nodes: course(random),
           pickups: Array.from({ length: 24 }, (_, i) => ({
-            y: 420 + i * 540 + Math.random() * 180,
+            y: 420 + i * 540 + random() * 180,
             collected: false,
           })),
           bonuses: Array.from({ length: 30 }, (_, i) =>
-            bonus(300 + i * 350 + Math.random() * 120),
+            bonus(300 + i * 350 + random() * 120, random),
           ),
           effects: [],
           flash: 0,
@@ -1045,7 +1076,16 @@
         audio =
           audio || new (window.AudioContext || window.webkitAudioContext)();
         audio.resume();
-        game = fresh();
+        game = fresh(
+          runSeed,
+          runMode === "daily" ? hashSeed(runSeed) % 4 : 0,
+        );
+        if (runMode === "daily" && runTrack) {
+          try {
+            const key = `thread-daily-attempts-${runTrack}`;
+            localStorage.setItem(key, Number(localStorage.getItem(key) || 0) + 1);
+          } catch (e) {}
+        }
         started = true;
         newBest.classList.remove("show");
         startCard.classList.add("hidden");
@@ -1059,14 +1099,8 @@
       document.querySelector("#again").onclick = begin;
       document.querySelector("#home-button").onclick = () => {
         stopMusic();
-        started = false;
-        if (game) game.running = false;
-        result.classList.add("hidden");
-        hud.classList.add("hidden");
-        slider.classList.add("hidden");
-        startCard.classList.remove("hidden");
-        startBest.textContent = best.toLocaleString();
-        startMenuMusic();
+        stopMenuMusic();
+        location.href = "update-2-preview.html";
       };
       document.querySelector("#share-score").onclick = async () => {
         const runScore = Math.floor(game?.score || 0).toLocaleString(),
@@ -1074,8 +1108,10 @@
           runSize = Math.round(game?.ringRadius || 0),
           runSpeed = ((game?.speed || 54) / 54).toFixed(1),
           runLevel = Math.floor((game?.score || 0) / STAGE) + 1,
-          shareUrl = location.origin + location.pathname,
-          shareText = `I scored ${runScore} in THREAD by One Thumb Arcade!\n\n${runDistance}m threaded · ${runSize}px size · ${runSpeed}× speed · Level ${runLevel}\n\nCan you beat me?`;
+          shareUrl = new URL("update-2-preview.html", location.href).href,
+          trackLine =
+            runMode === "daily" && runTrack ? `Daily Track #${runTrack}\n` : "",
+          shareText = `I scored ${runScore} in THREAD by One Thumb Arcade!\n\n${trackLine}${runDistance}m threaded · ${runSize}px size · ${runSpeed}× speed · Level ${runLevel}\n\nCan you beat me?`;
         try {
           if (navigator.share) {
             await navigator.share({ title: "THREAD high score", text: shareText, url: shareUrl });
@@ -1121,11 +1157,13 @@
       addEventListener(
         "pointerdown",
         () => {
-          if (!started || !game?.running) startMenuMusic();
+          if (started && game?.running) startMusic();
+          else startMenuMusic();
         },
         { once: true },
       );
       startMenuMusic();
+      if (runParams.has("mode")) begin();
       function move(x) {
         if (!pointer || !game?.running) return;
         const r = Math.min(width * 0.4, 190);
@@ -1189,7 +1227,7 @@
           ringY = Math.min(height * 0.6, height - 225),
           cr = Math.min(width * 0.4, 190),
           stage = Math.floor(g.score / STAGE) + 1,
-          s = (stage - 1) % 4,
+          s = (stage - 1 + (g.shapeOffset || 0)) % 4,
           z = Math.max(0.74, 1 - (stage - 1) * 0.024),
           sw = [1, 0.92, 0.68, 0.56][s] * z,
           laser = LASERS[(stage - 1) % 5];
@@ -1197,15 +1235,15 @@
         hud.style.setProperty("--laser-soft", laser[0] + "24");
         hud.style.setProperty("--laser-glow", laser[0] + "66");
         if (started && g.running) {
-          extend(g.nodes, g.distance + height * 2);
+          extend(g.nodes, g.distance + height * 2, g.random);
           while (g.pickups.at(-1).y < g.distance + height * 2)
             g.pickups.push({
-              y: g.pickups.at(-1).y + 520 + Math.random() * 220,
+              y: g.pickups.at(-1).y + 520 + g.random() * 220,
               collected: false,
             });
           while (g.bonuses.at(-1).y < g.distance + height * 2)
             g.bonuses.push(
-              bonus(g.bonuses.at(-1).y + 300 + Math.random() * 190),
+              bonus(g.bonuses.at(-1).y + 300 + g.random() * 190, g.random),
             );
           g.speed = 54 + g.distance / 105;
           g.distance += g.speed * dt;
@@ -1274,6 +1312,14 @@
             startMenuMusic();
             const runScore = Math.floor(g.score),
               isBest = runScore > best;
+            if (runMode === "daily" && runTrack) {
+              try {
+                const dailyKey = `thread-daily-${runTrack}`,
+                  dailyBest = Number(localStorage.getItem(dailyKey) || 0);
+                if (runScore > dailyBest)
+                  localStorage.setItem(dailyKey, runScore);
+              } catch (e) {}
+            }
             if (isBest) {
               best = runScore;
               try {
