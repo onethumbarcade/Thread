@@ -11,6 +11,10 @@
   <style>
     #home{min-height:min(72vh,620px);display:flex;flex-direction:column;justify-content:center}
     #home:not(.active){display:none}
+    .preview-studio-logo{display:block;flex-shrink:0;width:min(70vw,250px);height:auto;margin:-10px auto -2px;filter:drop-shadow(0 0 18px #16dfff35)}
+    #home .studio{margin-top:0;color:#91a8ca;font-size:10px;letter-spacing:5px;text-transform:lowercase}
+    #home h1{margin-top:5px}
+    .topbar[hidden]{display:none}
     .topbar .brand{text-shadow:0 0 18px #2ce8ff55}.preview.logo-badge{width:48px;height:48px;padding:3px;border-color:#ff5ad899;background:#0a1020;box-shadow:0 0 16px #ff4fd744}.preview.logo-badge img{display:block;width:100%;height:100%;object-fit:contain;clip-path:circle(44% at 49.5% 49.5%);filter:drop-shadow(0 0 7px #2ce8ff88)}
     .settings-button{position:absolute;top:14px;right:14px;width:46px;height:46px;padding:0;border:1px solid #eaffff;border-radius:50%;background:linear-gradient(110deg,#32efff 0%,#7af7df 48%,#ff55d7 100%);box-shadow:0 5px 0 #08768b,0 0 18px #2ce8ff66;color:#05060b;font-size:23px;font-weight:900;z-index:2}
     .settings{display:flex;align-items:center;justify-content:space-between;padding:14px 2px;border-bottom:1px solid #ffffff14;text-align:left}.settings span{display:block;font-weight:900}.settings small{display:block;margin-top:3px;color:#8298ba;font-size:10px}.switch{position:relative;width:57px;height:31px;border:1px solid #38eaff66;border-radius:18px;background:#11182a}.switch:after{content:"";position:absolute;left:4px;top:4px;width:21px;height:21px;border-radius:50%;background:#68738a;transition:.2s}.switch.on{background:linear-gradient(90deg,#26dff1,#ff4bd8);box-shadow:0 0 14px #2ce8ff44}.switch.on:after{left:30px;background:#fff;box-shadow:0 0 8px #fff}
@@ -20,9 +24,11 @@
 <body>
   <div class="stars"></div>
   <main class="app"><div class="shell">
-    <header class="topbar"><div class="brand">THREAD</div><div class="preview logo-badge"><img src="assets/one-thumb-icon-transparent.webp" alt="One Thumb Arcade"></div></header>
+    <header class="topbar" hidden><div class="brand">THREAD</div><div class="preview logo-badge"><img src="assets/one-thumb-icon-transparent.webp" alt="One Thumb Arcade"></div></header>
     <section class="card view active" id="home">
       <button class="settings-button" data-go="options" aria-label="Options">⚙︎</button>
+      <img class="preview-studio-logo" src="assets/one-thumb-arcade.webp" width="360" height="360" alt="One Thumb Arcade">
+      <div class="studio">presents</div><h1>THREAD</h1>
       <p class="sub">Choose today’s shared challenge, generate a fresh run, or revisit an earlier track.</p>
       <button class="mode primary" data-go="today"><span class="arrow">›</span><strong>TODAY’S TRACK</strong><small id="home-today">Same course for everyone</small></button>
       <button class="mode" data-go="generate"><span class="arrow">›</span><strong>GENERATE TRACK</strong><small>A completely new track every time</small></button>
@@ -86,7 +92,7 @@
     function hashSeed(value){let h=2166136261;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
     const dailyShape=shapeNames[hashSeed(`daily-${day}`)%shapeNames.length],dailyBest=Number(localStorage.getItem(`thread-daily-${day}`)||0),attempts=Number(localStorage.getItem(`thread-daily-attempts-${day}`)||0);
     document.querySelector('#today-id').textContent=`TODAY’S TRACK: #${day}`;document.querySelector('#board-id').textContent=`TRACK #${day}`;document.querySelector('#today-date').textContent=fmt.format(now).toUpperCase();document.querySelector('#home-today').textContent=`Track #${day} · ${fmt.format(now)}`;document.querySelector('#track-code').textContent=dailyShape;document.querySelector('#attempts').textContent=attempts;document.querySelector('#daily-best').textContent=dailyBest?dailyBest.toLocaleString():'—';
-    function show(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));scrollTo(0,0)}document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
+    function show(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelector('.topbar').hidden=id==='home';scrollTo(0,0)}document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
     let settings={sfx:true,music:true,haptics:true,reduced:false};try{settings={...settings,...JSON.parse(localStorage.getItem('thread-settings')||'{}')}}catch(e){}const menuMusic=document.querySelector('#menu-music');menuMusic.volume=.34;function syncMusic(){settings.music?menuMusic.play().catch(()=>{}):menuMusic.pause()}function refreshSettings(){document.querySelectorAll('[data-setting]').forEach(b=>b.classList.toggle('on',!!settings[b.dataset.setting]));document.body.classList.toggle('reduced-motion',!!settings.reduced)}document.querySelectorAll('[data-setting]').forEach(b=>b.onclick=()=>{settings[b.dataset.setting]=!settings[b.dataset.setting];try{localStorage.setItem('thread-settings',JSON.stringify(settings))}catch(e){}refreshSettings();syncMusic()});refreshSettings();addEventListener('pointerdown',syncMusic,{once:true});syncMusic();
     function code(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<4;i++)s+=a[Math.floor(Math.random()*a.length)];return s+'-'+Math.floor(1000+Math.random()*9000)}document.querySelector('#new-seed').onclick=()=>document.querySelector('#seed').textContent=code();
     const playDaily=n=>location.href=`index.html?mode=daily&track=${n}`;
