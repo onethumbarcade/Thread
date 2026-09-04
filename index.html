@@ -355,6 +355,23 @@
           0 0 26px #2ce8ff52;
         border: 1px solid #d9ffff80;
       }
+      .result-actions {
+        display: grid;
+        grid-template-columns: 1.65fr 1fr;
+        gap: 10px;
+      }
+      .result-actions button {
+        min-width: 0;
+      }
+      #home-button {
+        color: #75f4ff !important;
+        background: #09152ceF !important;
+        border: 1px solid #45eeff99 !important;
+        box-shadow:
+          0 7px 0 #030817,
+          0 0 20px #2ce8ff35 !important;
+        font-size: 15px;
+      }
       .hidden {
         display: none;
       }
@@ -750,8 +767,11 @@
         <h2 id="final-score">0</h2>
         <span id="distance">0m climbed</span>
         <div class="result-best">PERSONAL BEST <b id="result-best">0</b></div>
-        <button id="again">TRY AGAIN</button
-        ><button class="options-btn" data-open-options aria-label="Options">
+        <div class="result-actions">
+          <button id="again">TRY AGAIN</button>
+          <button id="home-button">HOME</button>
+        </div>
+        <button class="options-btn" data-open-options aria-label="Options">
           ⚙︎
         </button>
       </section>
@@ -1032,6 +1052,17 @@
       }
       document.querySelector("#play").onclick = begin;
       document.querySelector("#again").onclick = begin;
+      document.querySelector("#home-button").onclick = () => {
+        stopMusic();
+        started = false;
+        if (game) game.running = false;
+        result.classList.add("hidden");
+        hud.classList.add("hidden");
+        slider.classList.add("hidden");
+        startCard.classList.remove("hidden");
+        startBest.textContent = best.toLocaleString();
+        startMenuMusic();
+      };
       document.querySelector("#share-score").onclick = async () => {
         const runScore = Math.floor(game?.score || 0).toLocaleString(),
           runDistance = Math.floor((game?.distance || 0) / 10),
