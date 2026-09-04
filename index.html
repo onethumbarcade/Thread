@@ -883,6 +883,10 @@
         runMode = runParams.get("mode") || "generated",
         runTrack = runParams.get("track"),
         runCode = runParams.get("seed"),
+        bestStorageKey =
+          runMode === "daily" && runTrack
+            ? `thread-daily-${runTrack}`
+            : "thread-best",
         runSeed =
           runMode === "daily"
             ? `daily-${runTrack || 1}`
@@ -910,7 +914,7 @@
           ...settings,
           ...JSON.parse(localStorage.getItem("thread-settings") || "{}"),
         };
-        best = Number(localStorage.getItem("thread-best") || 0);
+        best = Number(localStorage.getItem(bestStorageKey) || 0);
       } catch (e) {}
       startBest.textContent = best.toLocaleString();
       function saveSettings() {
@@ -1297,18 +1301,10 @@
             startMenuMusic();
             const runScore = Math.floor(g.score),
               isBest = runScore > best;
-            if (runMode === "daily" && runTrack) {
-              try {
-                const dailyKey = `thread-daily-${runTrack}`,
-                  dailyBest = Number(localStorage.getItem(dailyKey) || 0);
-                if (runScore > dailyBest)
-                  localStorage.setItem(dailyKey, runScore);
-              } catch (e) {}
-            }
             if (isBest) {
               best = runScore;
               try {
-                localStorage.setItem("thread-best", best);
+                localStorage.setItem(bestStorageKey, best);
               } catch (e) {}
               newBest.textContent = runScore.toLocaleString();
               newBest.classList.add("show");
