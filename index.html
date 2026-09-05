@@ -754,6 +754,9 @@
       const GAP = 86,
         TAU = Math.PI * 2,
         TRIANGLE_REACH = 0.56,
+        GROWTH_ORB_RADIUS = 11,
+        GROWTH_ORB_AMOUNT = 11,
+        MAX_TRACKER_RADIUS = 72,
         STAGE = 20000,
         LASERS = [
           ["#55f7d5", "#2affdf"],
@@ -1207,7 +1210,11 @@
       }
       function collectReward(g, kind, x, y) {
         const orb = kind === "orb", points = (orb ? 250 : POINTS[kind]) * (g.powerUps.double > 0 ? 2 : 1);
-        if (orb) { g.ringRadius = Math.min(72, g.ringRadius + 11); g.flash = 1; }
+        if (orb) {
+          g.ringRadius = Math.min(MAX_TRACKER_RADIUS, g.ringRadius + GROWTH_ORB_AMOUNT);
+          g.flash = 1;
+          effect(g, x, y - 28, g.ringRadius === MAX_TRACKER_RADIUS ? "MAX SIZE" : `+${GROWTH_ORB_AMOUNT} SIZE`, "#ffd447");
+        }
         g.score += points;
         sound(orb ? "orb" : "fruit");
         buzz(orb ? 12 : 18);
@@ -1290,9 +1297,12 @@
           for (const p of g.pickups)
             if (!p.resolved && p.magnetX == null && Math.abs(p.y - g.distance) < g.speed * dt + 3) {
               p.resolved = true;
-              if (safe) {
+              const orbX = cx + cr * Math.sin(angle(g.nodes, p.y));
+              // Orbs collect on contact, independently of laser-centering safety
+              // and Star's decorative glow. Use the current, possibly grown size.
+              if (Math.abs(orbX - rx) <= g.ringRadius * sw + GROWTH_ORB_RADIUS) {
                 p.collected = true;
-                collectReward(g, "orb", px, ringY);
+                collectReward(g, "orb", orbX, ringY);
               }
             }
           for (const o of g.bonuses)
@@ -1445,7 +1455,7 @@
           ctx.shadowColor = "#ffd447";
           ctx.shadowBlur = 17;
           ctx.beginPath();
-          ctx.arc(0, 0, 11, 0, TAU);
+          ctx.arc(0, 0, GROWTH_ORB_RADIUS, 0, TAU);
           ctx.fill();
           ctx.shadowBlur = 0;
           ctx.strokeStyle = "#fff5b7";
