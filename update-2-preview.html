@@ -85,12 +85,15 @@
     </section>
     <section class="thread-menu-card view" id="scoring" data-thread-panel="scoring"></section>
     <section class="thread-menu-card view" id="options" data-thread-panel="options"></section>
+    <section class="thread-menu-card view" id="powerups" data-thread-panel="powerups"></section>
   </div></main>
   <div class="ad">DISPLAY AD AREA</div>
   <audio id="menu-music" loop preload="auto" src="assets/thread-menu.mp3"></audio>
   <script src="assets/menu-panels.js"></script>
   <script src="assets/track-sharing.js"></script>
   <script src="assets/daily-tracks.js"></script>
+  <script src="assets/power-ups.js"></script>
+  <script src="assets/power-up-menu.js"></script>
   <script>
     const launch=new Date('2026-09-04T00:00:00'),now=new Date(),day=Math.max(1,Math.floor((new Date(now.getFullYear(),now.getMonth(),now.getDate())-launch)/86400000)+1),fmt=new Intl.DateTimeFormat(undefined,{weekday:'long',month:'long',day:'numeric'});
     const dailyTrack=ThreadDaily.getTrack(day),dailyShape=dailyTrack.startingShapeName,dailyBest=Number(localStorage.getItem(`thread-daily-${day}`)||0),attempts=Number(localStorage.getItem(`thread-daily-attempts-${day}`)||0);

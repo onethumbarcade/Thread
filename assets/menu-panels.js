@@ -8,7 +8,7 @@
     <div class="settings"><div><span>Haptics</span><small>Touch feedback on supported devices</small></div><button class="switch on" data-setting="haptics" aria-label="Toggle haptics"></button></div>
     <div class="settings"><div><span>Reduced Motion</span><small>Minimizes pulsing and moving stars</small></div><button class="switch" data-setting="reduced" aria-label="Toggle reduced motion"></button></div>
     <div class="option-actions">
-      <button class="scoring-link" data-go="scoring"><span aria-hidden="true">ⓘ</span> Scoring Guide</button>
+      <div class="option-links"><button class="scoring-link" data-go="scoring"><span aria-hidden="true">ⓘ</span> Scoring Guide</button><button class="scoring-link" data-go="powerups">Power-up Mix</button></div>
       <button class="action" data-go="home">DONE</button>
     </div>
   `,
@@ -27,10 +27,29 @@
       <div class="rank"><b>💣</b><span>−35 energy and −8px size</span><b>0 pts</b></div>
       <div class="rank"><b>★</b><span>Invincibility: blocks bombs, energy loss and shrinking</span><b>7 sec</b></div>
       <div class="rank"><b>⚡</b><span>Blaster: automatically shoots approaching bombs</span><b>12 sec</b></div>
+      <div class="rank"><b>∩</b><span>Magnet: pulls distant fruit and nearby growth orbs to you</span><b>10 sec</b></div>
+      <div class="rank"><b>◷</b><span>Slow motion: course moves at 60% speed</span><b>6 sec</b></div>
+      <div class="rank"><b>2×</b><span>Double points: threading, fruit and growth orbs</span><b>10 sec</b></div>
+      <div class="rank"><b>+</b><span>Energy cell: instantly restores full health</span><b>100%</b></div>
     </div>
     <div class="holiday">NEW LEVEL EVERY 20,000 POINTS</div>
-    <p class="note">Stars and blasters sit farther off the laser than fruit. Swerve to collect them, then return to the laser to keep scoring. Blasted bombs give no points.</p>
+    <p class="note">Power-ups sit farther off the laser than fruit. Swerve to collect them, then return to the laser to keep scoring. Timed powers can overlap; collecting the same power refreshes its timer. Blasted bombs give no points.</p>
     <p class="note">Maximum scores come from precise centering, surviving higher speed multipliers and taking calculated risks for collectibles.</p>
+  `,
+    powerups: `
+    <div class="guide-head"><button class="back" data-go="options" aria-label="Back to options">‹</button><div class="guide-title">POWER-UP MIX</div></div>
+    <p class="mix-intro">Choose how often each power-up appears in generated tracks. Daily tracks use the same mix for everyone.</p>
+    ${[
+      ["star", "★ Star", "7 seconds of rainbow invincibility"],
+      ["blaster", "⚡ Blaster", "12 seconds of automatic bomb blasting"],
+      ["magnet", "∩ Magnet", "10 seconds of fruit and orb attraction"],
+      ["slow", "◷ Slow Motion", "6 seconds at 60% course speed"],
+      ["double", "2× Double Points", "10 seconds of double scoring"],
+      ["energy", "+ Energy Cell", "Instantly restores health to 100%"],
+    ].map(([kind, label, description]) => `<div class="power-mix-row"><label for="mix-${kind}">${label}<output id="mix-${kind}-value" for="mix-${kind}">Normal</output></label><small>${description}</small><input id="mix-${kind}" data-power-rate="${kind}" type="range" min="0" max="3" step="1" value="2" aria-valuetext="Normal"><div class="mix-scale" aria-hidden="true"><span>Off</span><span>Rare</span><span>Normal</span><span>Often</span></div></div>`).join("")}
+    <p class="mix-note" id="power-mix-status" role="status">Saves automatically for your next generated run. Shared links include the mix; a code uses your chosen mix.</p>
+    <button class="scoring-link" id="reset-power-mix">Reset to defaults</button>
+    <button class="action" id="play-power-mix">PLAY WITH THIS MIX</button>
   `,
   };
   document.querySelectorAll("[data-thread-panel]").forEach((panel) => {

@@ -8,6 +8,7 @@
   const error = document.querySelector("#track-code-error");
   const manual = document.querySelector("#track-share-manual");
   const manualLink = document.querySelector("#track-share-link");
+  const currentMix = () => globalThis.ThreadPowerUpMenu?.getMix() || globalThis.ThreadPowerUps?.readMix();
 
   function clearFeedback() {
     status.textContent = "";
@@ -35,7 +36,7 @@
     status.textContent = `New track ${code} ready.`;
   };
   document.querySelector("#play-generated").onclick = () => {
-    location.href = ThreadTracks.trackUrl("generated", seed.textContent);
+    location.href = ThreadTracks.trackUrl("generated", seed.textContent, location.href, currentMix());
   };
   entryButton.onclick = () => {
     clearFeedback();
@@ -65,12 +66,12 @@
   shareButton.onclick = async () => {
     clearFeedback();
     const code = seed.textContent;
-    const url = ThreadTracks.trackUrl("generated", code);
+    const url = ThreadTracks.trackUrl("generated", code, location.href, currentMix());
     shareButton.disabled = true;
     try {
       const result = await ThreadTracks.share({
         title: "THREAD track challenge",
-        text: `Try my track in THREAD by One Thumb Arcade!\nTrack code: ${code}\nOpen this link to play the same course.`,
+        text: `Try my track in THREAD by One Thumb Arcade!\nTrack code: ${code}\nOpen this link to play the same course and power-up mix.`,
         url,
       });
       if (result === "shared") status.textContent = "Track shared.";

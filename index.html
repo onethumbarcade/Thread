@@ -128,9 +128,12 @@
         background: linear-gradient(90deg, #ff4068, #ffe05b 40%, #41f7d0);
         box-shadow: 0 0 12px #41f7d0;
       }
-      .power-status { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
+      .power-status { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 8px; }
       .power-status span { padding: 4px 9px; border: 1px solid currentColor; border-radius: 999px; background: #070b17ed; color: #ffe66e; font-size: 11px; font-weight: 900; }
       .power-status #blaster-timer { color: #72f6ff; }
+      .power-status #magnet-timer { color: #ff87df; }
+      .power-status #slow-timer { color: #baa0ff; }
+      .power-status #double-timer { color: #ffbd72; }
       .slider {
         --thumb: 50%;
         position: absolute;
@@ -666,7 +669,7 @@
           ><span>SCORE<b id="score">0</b></span>
         </div>
         <div class="energy"><i id="energy" style="width: 100%"></i></div>
-        <div class="power-status"><span id="star-timer" hidden></span><span id="blaster-timer" hidden></span></div>
+        <div class="power-status"><span id="star-timer" hidden></span><span id="blaster-timer" hidden></span><span id="magnet-timer" hidden></span><span id="slow-timer" hidden></span><span id="double-timer" hidden></span></div>
       </header>
       <div
         class="slider hidden"
@@ -689,7 +692,7 @@
           <li><b>Slide</b> to move the tracker</li>
           <li><b>Stay centered</b> to protect your energy</li>
           <li><b>Collect</b> orbs and nearby treats—avoid bombs</li>
-          <li><b>Swerve farther</b> for invincibility stars and bomb blasters</li>
+          <li><b>Swerve farther</b> for power-ups—combine them for bigger runs</li>
         </ul>
         <div class="best-pill">PERSONAL BEST <b id="start-best">0</b></div>
         <button id="play">PLAY</button
@@ -730,6 +733,7 @@
           <header class="thread-menu-topbar" data-thread-brand></header>
           <section class="thread-menu-card view active" id="options" data-thread-panel="options" data-options-return="results"></section>
           <section class="thread-menu-card view" id="scoring" data-thread-panel="scoring"></section>
+          <section class="thread-menu-card view" id="powerups" data-thread-panel="powerups"></section>
         </div>
       </div>
     </main>
@@ -750,6 +754,7 @@
     <script src="assets/daily-tracks.js"></script>
     <script src="assets/daily-music.js"></script>
     <script src="assets/power-ups.js"></script>
+    <script src="assets/power-up-menu.js"></script>
     <script>
       const GAP = 86,
         TAU = Math.PI * 2,
@@ -797,6 +802,7 @@
         runTrack = runParams.get("track"),
         runCode = runParams.get("seed"),
         dailyTrack = runMode === "daily" ? ThreadDaily.getTrack(runTrack) : null,
+        runMix = dailyTrack ? ThreadPowerUps.defaultMix : ThreadPowerUps.normalizeMix(runParams.get("powers")),
         bestStorageKey =
           runMode === "daily" && runTrack
             ? `thread-daily-${runTrack}`
@@ -882,7 +888,7 @@
           y,
           kind: k,
           side: random() < 0.5 ? -1 : 1,
-          offset: bomb ? 88 + random() * 22 : 28 + random() * 15,
+          offset: bomb ? 88 + random() * 22 : 62 + random() * 18,
           collected: false,
         };
       }
@@ -903,7 +909,7 @@
           bonusRandom: seed == null ? Math.random : seededRandom(hashSeed(`${seed}:bonuses`)),
           shapeOffset,
           shapeSequence,
-          powerUps: ThreadPowerUps.create(seed == null ? Math.random : seededRandom(hashSeed(`${seed}:powers`))),
+          powerUps: ThreadPowerUps.create(seed == null ? Math.random : seededRandom(hashSeed(`${seed}:powers`)), runMix),
           nodes: course(random),
           pickups: Array.from({ length: 24 }, (_, i) => ({
             y: 420 + i * 540 + random() * 180,
@@ -1020,8 +1026,7 @@
         hud.classList.remove("hidden");
         slider.classList.remove("hidden");
         slider.style.setProperty("--thumb", "50%");
-        document.querySelector("#star-timer").hidden = true;
-        document.querySelector("#blaster-timer").hidden = true;
+        for (const kind of Object.keys(ThreadPowerUps.durations)) document.querySelector(`#${kind}-timer`).hidden = true;
         startMusic();
       }
       document.querySelector("#play").onclick = begin;
@@ -1040,6 +1045,8 @@
           shareUrl = ThreadTracks.trackUrl(
             runMode === "daily" ? "daily" : "generated",
             runMode === "daily" ? runTrack || 1 : runSeed,
+            location.href,
+            dailyTrack ? undefined : runMix,
           ),
           trackLine =
             runMode === "daily" ? `Daily Track #${runTrack || 1}\n` : `Track code: ${runSeed}\n`,
@@ -1176,12 +1183,20 @@
       function effect(g, x, y, text, color) {
         g.effects.push({ x, y, text, color, life: 1 });
       }
+      function collectReward(g, kind, x, y) {
+        const orb = kind === "orb", points = (orb ? 250 : POINTS[kind]) * (g.powerUps.double > 0 ? 2 : 1);
+        if (orb) { g.ringRadius = Math.min(72, g.ringRadius + 11); g.flash = 1; }
+        g.score += points;
+        sound(orb ? "orb" : "fruit");
+        buzz(orb ? 12 : 18);
+        effect(g, x, y, "+" + points, orb ? "#ffd447" : "#8dff9d");
+      }
       function frame(time) {
         const dt = Math.max(0, Math.min(0.033, (time - previous) / 1000));
         previous = time;
         const g = game || fresh(),
           cx = width / 2,
-          top = 140,
+          top = Math.max(140, hud.offsetHeight || 140),
           bottom = height - 150,
           ringY = Math.min(height * 0.6, height - 225),
           cr = Math.min(width * 0.4, 190),
@@ -1206,7 +1221,8 @@
             );
           ThreadPowerUps.extend(g.powerUps, g.bonuses);
           ThreadPowerUps.tick(g.powerUps, dt);
-          g.speed = 54 + g.distance / 105;
+          const pace = g.powerUps.slow > 0 ? .6 : 1, playDt = dt * pace;
+          g.speed = (54 + g.distance / 105) * pace;
           g.distance += g.speed * dt;
           const px = cx + cr * Math.sin(angle(g.nodes, g.distance)),
             rx = cx + g.ringOffset,
@@ -1217,7 +1233,11 @@
             item => ThreadPowerUps.position(item, cx + cr * Math.sin(angle(g.nodes, item.y)), cx, cr))) {
             sound("power");
             buzz([18, 25, 18]);
-            effect(g, rx, ringY - 45, item.kind === "star" ? "INVINCIBLE!" : "BLASTER READY!", item.kind === "star" ? "#ffe66e" : "#72f6ff");
+            const labels = { star: "INVINCIBLE!", blaster: "BLASTER READY!", magnet: "MAGNET ON!", slow: "SLOW MOTION!", double: "DOUBLE POINTS!", energy: "FULL HEALTH!" };
+            if (item.kind === "energy") {
+              g.energy = 100;
+            }
+            effect(g, rx, ringY - 45, labels[item.kind], "#baffdf");
           }
           for (const event of ThreadPowerUps.shoot(g.powerUps, {
             dt, bonuses: g.bonuses, distance: g.distance, ringX: rx, ringY,
@@ -1227,32 +1247,31 @@
             if (event.kind === "hit") effect(g, event.x, event.y, "ZAP!", "#72f6ff");
           }
           const invincible = g.powerUps.star > 0;
+          for (const item of ThreadPowerUps.attract(g.powerUps, [...g.pickups, ...g.bonuses], {
+            dt, distance: g.distance, ringX: rx, ringY,
+            getX: item => item.kind ? itemX(item, cx, cr, g) : cx + cr * Math.sin(angle(g.nodes, item.y)),
+          })) collectReward(g, item.kind || "orb", rx, ringY);
           if (safe) {
-            g.energy = Math.min(100, g.energy + 13 * dt);
+            g.energy = Math.min(100, g.energy + 13 * playDt);
             g.score +=
               (22 + (1 - off / Math.max(1, g.ringRadius)) * 30) *
               dt *
-              (g.speed / 54);
-          } else if (!invincible) g.energy -= Math.min(80, 30 + g.distance / 240) * dt;
+              (g.speed / 54) * (g.powerUps.double > 0 ? 2 : 1);
+          } else if (!invincible) g.energy -= Math.min(80, 30 + g.distance / 240) * playDt;
           if (!invincible) g.ringRadius = Math.max(
             24,
-            g.ringRadius - (0.9 + (g.speed / 54 - 1) * 0.58) * dt,
+            g.ringRadius - (0.9 + ((54 + g.distance / 105) / 54 - 1) * 0.58) * playDt,
           );
           for (const p of g.pickups)
-            if (!p.resolved && Math.abs(p.y - g.distance) < g.speed * dt + 3) {
+            if (!p.resolved && p.magnetX == null && Math.abs(p.y - g.distance) < g.speed * dt + 3) {
               p.resolved = true;
               if (safe) {
                 p.collected = true;
-                g.ringRadius = Math.min(72, g.ringRadius + 11);
-                g.score += 250;
-                g.flash = 1;
-                sound("orb");
-                buzz(12);
-                effect(g, px, ringY, "+250", "#ffd447");
+                collectReward(g, "orb", px, ringY);
               }
             }
           for (const o of g.bonuses)
-            if (!o.resolved && Math.abs(o.y - g.distance) < g.speed * dt + 3) {
+            if (!o.resolved && o.magnetX == null && Math.abs(o.y - g.distance) < g.speed * dt + 3) {
               o.resolved = true;
               const ix = itemX(o, cx, cr, g);
               if (Math.abs(ix - rx) <= reach + 14) {
@@ -1270,10 +1289,7 @@
                   buzz([60, 30, 80]);
                   effect(g, ix, ringY, "BOOM", "#ff456b");
                 } else {
-                  g.score += POINTS[o.kind];
-                  sound("fruit");
-                  buzz(18);
-                  effect(g, ix, ringY, "+" + POINTS[o.kind], "#8dff9d");
+                  collectReward(g, o.kind, ix, ringY);
                 }
               }
             }
@@ -1288,7 +1304,7 @@
           if (g.energy <= 0) {
             g.energy = 0;
             g.running = false;
-            g.powerUps.star = g.powerUps.blaster = 0;
+            for (const kind of Object.keys(ThreadPowerUps.durations)) g.powerUps[kind] = 0;
             g.powerUps.shots = [];
             stopMusic();
             startMenuMusic();
@@ -1393,9 +1409,9 @@
         ctx.shadowBlur = 0;
         for (const p of g.pickups) {
           if (p.collected) continue;
-          const sy = ringY - (p.y - g.distance);
+          const sy = p.magnetY ?? ringY - (p.y - g.distance);
           if (sy < top - 30 || sy > bottom + 30) continue;
-          const x = cx + cr * Math.sin(angle(g.nodes, p.y)),
+          const x = p.magnetX ?? cx + cr * Math.sin(angle(g.nodes, p.y)),
             pulse = settings.reduced ? 1 : 1 + Math.sin(time * 0.007) * 0.12;
           ctx.save();
           ctx.translate(x, sy);
@@ -1416,10 +1432,10 @@
         }
         for (const o of g.bonuses) {
           if (o.collected) continue;
-          const sy = ringY - (o.y - g.distance);
+          const sy = o.magnetY ?? ringY - (o.y - g.distance);
           if (sy < top - 35 || sy > bottom + 35) continue;
           ctx.save();
-          ctx.translate(itemX(o, cx, cr, g), sy);
+          ctx.translate(o.magnetX ?? itemX(o, cx, cr, g), sy);
           const p = settings.reduced
             ? 1
             : 1 + Math.sin(time * 0.006 + o.y) * 0.06;
@@ -1445,7 +1461,7 @@
           const pulse = settings.reduced ? 1 : 1 + Math.sin(time * .005 + item.y) * .06;
           ctx.scale(pulse, pulse);
           ctx.fillStyle = "#0b1430";
-          ctx.strokeStyle = item.kind === "star" ? "#ffe66e" : "#72f6ff";
+          ctx.strokeStyle = { star: "#ffe66e", blaster: "#72f6ff", magnet: "#ff87df", slow: "#baa0ff", double: "#ffbd72", energy: "#86ffb1" }[item.kind];
           ctx.shadowColor = ctx.strokeStyle;
           ctx.shadowBlur = 16;
           ctx.lineWidth = 2;
@@ -1463,13 +1479,64 @@
             }
             ctx.closePath();
             ctx.fill();
-          } else {
-            ctx.fillRect(-10, -9, 6, 20);
-            ctx.fillRect(4, -9, 6, 20);
-            ctx.fillRect(-6, 5, 12, 6);
+          } else if (item.kind === "magnet") {
+            ctx.lineWidth = 7;
+            ctx.beginPath();
+            ctx.moveTo(-8, -9);
+            ctx.lineTo(-8, 2);
+            ctx.arc(0, 2, 8, Math.PI, 0, true);
+            ctx.lineTo(8, -9);
+            ctx.stroke();
             ctx.fillStyle = "#ffffff";
-            ctx.fillRect(-9, -15, 4, 5);
-            ctx.fillRect(5, -15, 4, 5);
+            ctx.fillRect(-11.5, -12, 7, 5);
+            ctx.fillRect(4.5, -12, 7, 5);
+          } else if (item.kind === "slow") {
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, 12, 0, TAU);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, -8);
+            ctx.lineTo(0, 0);
+            ctx.lineTo(6, 3);
+            ctx.stroke();
+          } else if (item.kind === "double") {
+            ctx.font = "1000 19px system-ui";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("2×", 0, 1);
+          } else if (item.kind === "energy") {
+            ctx.lineWidth = 2;
+            ctx.strokeRect(-11, -7, 20, 15);
+            ctx.fillRect(9, -3, 4, 7);
+            ctx.fillRect(-3, -4, 3, 9);
+            ctx.fillRect(-6, -1, 9, 3);
+          } else {
+            // A single ray gun with a grip, energy cell and projecting laser.
+            ctx.rotate(-Math.PI / 5);
+            ctx.beginPath();
+            ctx.moveTo(-12, -7);
+            ctx.lineTo(2, -7);
+            ctx.lineTo(6, -4);
+            ctx.lineTo(12, -4);
+            ctx.lineTo(12, 3);
+            ctx.lineTo(0, 3);
+            ctx.lineTo(-2, 11);
+            ctx.lineTo(-8, 11);
+            ctx.lineTo(-6, 3);
+            ctx.lineTo(-12, 3);
+            ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = "#ff66df";
+            ctx.fillRect(-9, -5, 7, 5);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(8, -3, 5, 3);
+            ctx.strokeStyle = "#ffffff";
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(15, -1.5);
+            ctx.lineTo(18, -1.5);
+            ctx.stroke();
           }
           ctx.restore();
         }
@@ -1489,23 +1556,35 @@
           ctx.fillRect(ringX - 14, ringY - g.ringRadius - 10, 7, 18);
           ctx.fillRect(ringX + 7, ringY - g.ringRadius - 10, 7, 18);
         }
-        if (g.powerUps.star > 0) {
-          ctx.strokeStyle = "#fff5ad";
-          ctx.lineWidth = 2;
-          ctx.shadowColor = "#ffe66e";
-          ctx.beginPath();
-          ctx.arc(ringX, ringY, g.ringRadius * 1.2 + 12, 0, TAU);
-          ctx.stroke();
-        }
         ctx.restore();
-        ctx.strokeStyle = g.powerUps.star > 0 ? "#fff5ad" : on ? "#ffd447" : "#ff5470";
-        ctx.lineWidth = 7;
-        ctx.shadowColor = g.powerUps.star > 0 ? "#ffe66e" : on ? "#ffd447" : "#ff3158";
-        ctx.shadowBlur = 18 + (settings.reduced ? 0 : g.flash * 18);
+        const starActive = g.powerUps.star > 0,
+          starPulse = settings.reduced ? .5 : (1 + Math.sin(time * .005)) / 2,
+          starHue = settings.reduced ? 0 : (time * .06) % 360;
+        let rainbow;
+        if (starActive) {
+          const span = g.ringRadius * 1.3;
+          rainbow = ctx.createLinearGradient(ringX - span, ringY - span, ringX + span, ringY + span);
+          for (let band = 0; band <= 6; band++)
+            rainbow.addColorStop(band / 6, `hsl(${(starHue + band * 60) % 360} 100% 65%)`);
+          // Pulse the outline/glow of the current shape without changing its hitbox.
+          ctx.save();
+          ctx.strokeStyle = rainbow;
+          ctx.lineWidth = 16 + starPulse * 6;
+          ctx.globalAlpha = .25 + starPulse * .12;
+          ctx.shadowColor = `hsl(${starHue} 100% 65%)`;
+          ctx.shadowBlur = 25 + starPulse * 15;
+          shape(ringX, ringY, g.ringRadius, s, z);
+          ctx.stroke();
+          ctx.restore();
+        }
+        ctx.strokeStyle = starActive ? rainbow : on ? "#ffd447" : "#ff5470";
+        ctx.lineWidth = starActive ? 7 + starPulse * 2 : 7;
+        ctx.shadowColor = starActive ? `hsl(${starHue} 100% 65%)` : on ? "#ffd447" : "#ff3158";
+        ctx.shadowBlur = starActive ? 22 + starPulse * 14 : 18 + (settings.reduced ? 0 : g.flash * 18);
         shape(ringX, ringY, g.ringRadius, s, z);
         ctx.stroke();
         ctx.shadowBlur = 0;
-        ctx.fillStyle = on ? "#fff3a5" : "#ff8da0";
+        ctx.fillStyle = starActive ? "#ffffff" : on ? "#fff3a5" : "#ff8da0";
         ctx.beginPath();
         ctx.arc(ringX, ringY, 4, 0, TAU);
         ctx.fill();
@@ -1533,10 +1612,11 @@
           speed.textContent = (g.speed / 54).toFixed(1) + "×";
           score.textContent = Math.floor(g.score).toLocaleString();
           energy.style.width = Math.round(g.energy) + "%";
-          for (const kind of ["star", "blaster"]) {
+          for (const kind of Object.keys(ThreadPowerUps.durations)) {
             const timer = document.querySelector(`#${kind}-timer`);
             timer.hidden = g.powerUps[kind] <= 0;
-            timer.textContent = `${kind === "star" ? "★ INVINCIBLE" : "⚡ BLASTER"} ${Math.ceil(g.powerUps[kind])}s`;
+            const label = { star: "★ INVINCIBLE", blaster: "⚡ BLASTER", magnet: "∩ MAGNET", slow: "◷ SLOW", double: "2× POINTS" }[kind];
+            timer.textContent = `${label} ${Math.ceil(g.powerUps[kind])}s`;
           }
         }
         requestAnimationFrame(frame);

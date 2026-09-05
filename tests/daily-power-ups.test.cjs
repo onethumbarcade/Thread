@@ -33,7 +33,7 @@ test('daily rules agree with the game and include fixed triangles and varied rot
 
 test('power placement stays seeded across retries, heights, and extension cadence', () => {
   const short = game('?mode=daily&track=3', {}, 600), tall = game('?mode=daily&track=3', {}, 1200);
-  const generation = gameScript.slice(gameScript.indexOf('          extend(g.nodes, g.distance + height * 2'), gameScript.indexOf('          g.speed = 54 +'));
+  const generation = gameScript.slice(gameScript.indexOf('          extend(g.nodes, g.distance + height * 2'), gameScript.indexOf('          const pace ='));
   for (const [run, step] of [[short, 113], [tall, 809]]) {
     value(run, `{const g=game,dt=0; for(g.distance=0;g.distance<40000;g.distance+=${step}){${generation}}}`);
   }
@@ -46,6 +46,7 @@ test('power placement stays seeded across retries, heights, and extension cadenc
     if (item.kind === 'blaster') assert(value(short, `game.bonuses.some(b=>b.kind==='bomb'&&Math.abs(b.y-${item.y}-260)<.00001)`));
   }
   short.get('#again').onclick();
+  short.step();
   const retry = json(short, 'game.powerUps.items');
   assert.deepEqual(retry, a.slice(0, retry.length));
   assert.equal(value(short, 'game.powerUps.star + game.powerUps.blaster + game.powerUps.shots.length'), 0);
@@ -65,9 +66,11 @@ test('off-track powers remain reachable at both edges and require a swerve', () 
       }
     }
   }
-  const state = powers.create(() => .5), item = state.items[0];
+  const item = {kind:'star',y:500,collected:false};
+  const state = powers.create(() => .5); state.items=[{...item}];
   assert.equal(powers.collect(state, item.y, 3, 195, 72, () => 296).length, 0);
   const swerved = powers.create(() => .5);
+  swerved.items=[{...item}];
   assert.equal(powers.collect(swerved, swerved.items[0].y, 3, 278, 24, () => 296).length, 1);
   assert.equal(swerved.star, 7);
 });

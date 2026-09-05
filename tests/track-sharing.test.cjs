@@ -111,7 +111,7 @@ test('first load and retries retain the seeded course and daily identity', () =>
 test('course continuation is independent of screen height and frame cadence', () => {
   const short = game('?mode=generated&seed=N3ON-4821', {}, 600);
   const tall = game('?mode=generated&seed=N3ON-4821', {}, 1200);
-  const generation = gameScript.slice(gameScript.indexOf('          extend(g.nodes, g.distance + height * 2'), gameScript.indexOf('          g.speed = 54 +'));
+  const generation = gameScript.slice(gameScript.indexOf('          extend(g.nodes, g.distance + height * 2'), gameScript.indexOf('          const pace ='));
   for (const [run, step] of [[short, 113], [tall, 809]]) {
     vm.runInContext(`{const g=game,dt=0; for(g.distance=0;g.distance<40000;g.distance+=${step}){${generation}}}`, run.context);
   }
@@ -129,7 +129,8 @@ test('post-game shares contain the exact played track and preserve scores', asyn
     vm.runInContext('game.score=51106;game.distance=34070;game.running=false;', run.context);
     const before = [...run.storage];
     await run.get('#share-score').onclick();
-    assert(payload.url.endsWith(expected));
+    assert(payload.url.includes(expected));
+    assert.equal(new URL(payload.url).searchParams.get('powers'), search.includes('daily') ? null : '222222');
     assert(payload.text.includes('51,106'));
     assert(payload.text.includes(search.includes('daily') ? 'Daily Track #2' : 'Track code: N3ON-4821'));
     assert.equal(vm.runInContext('game.score', run.context), 51106);
