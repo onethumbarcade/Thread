@@ -142,103 +142,155 @@ test('a stalled tab skips missed notes instead of playing a burst of old music',
   player.stop();
 });
 
-test('unavailable synthesis signals fallback to the existing game music', async () => {
+test('generated codes compose distinct, repeatable music with valid notes and event order', () => {
+  const signatures = new Set(), melodies = new Set(), tempos = new Set();
+  for (let i = 0; i < 32; i++) {
+    const code = `NEON-${4100 + i}`;
+    const score = music.generatedArrangement(code);
+    assert.deepEqual(score, music.generatedArrangement(code.toLowerCase().replace('-', ' ')));
+    assert(score.profile.bpm >= 122 && score.profile.bpm <= 146);
+    assert(score.events.length > 400 && score.events.length < 900);
+    let previous = -1;
+    for (const event of score.events) {
+      assert(event.time >= previous && event.time < score.duration);
+      if ('note' in event) assert(event.note >= 28 && event.note <= 100);
+      previous = event.time;
+    }
+    signatures.add(JSON.stringify(score.events));
+    melodies.add(JSON.stringify(score.profile.riff));
+    tempos.add(score.profile.bpm);
+  }
+  assert.equal(signatures.size, 32, 'new codes compose new arrangements');
+  assert(melodies.size > 24, 'custom music is not a selection from the seven daily songs');
+  assert(tempos.size > 6);
+});
+
+test('generated songs start immediately, loop cleanly, and release their audio nodes', async () => {
+  for (const code of ['N3ON-4821', 'ABCD-1234', 'WAVE-9328']) {
+    const score = music.generatedArrangement(code);
+    const audio = new Audio(), timers = new Timers(), player = music.createGeneratedPlayer(audio, code, timers);
+    const started = player.start();
+    assert(audio.sources.length > 0 && audio.sources.length < 20);
+    assert.equal(audio.sources[0].startTime, .025);
+    assert.equal(audio.buffers.length, 1);
+    assert.equal(audio.buffers[0].length / audio.buffers[0].sampleRate, 1);
+    assert.equal(await started, 'playing');
+    for (let time = .05; time < score.duration + .1; time += .05) timers.tick(audio, time);
+    score.events.forEach((event, i) => assert(Math.abs(audio.sources[i].startTime - event.time - .025) < 1e-8));
+    assert(Math.abs(audio.sources[score.events.length].startTime - score.duration - .025) < 1e-8);
+    assert(audio.sources.filter(source => !source.ended).length < 60);
+    player.stop();
+    assert.equal(timers.pending.size, 0);
+    assert(audio.nodes.every(node => node.connections.size === 0));
+  }
+});
+
+const modes = ['?mode=daily&track=3', '?mode=generated&seed=N3ON-4821'];
+const flush = () => new Promise(resolve => setImmediate(resolve));
+const inspect = (run, code) => vm.runInContext(code, run.context);
+const opening = audio => audio.sources.map(source => ({
+  type: source.type, frequency: source.frequency.value, time: source.startTime,
+}));
+
+test('unsupported synthesis keeps the game playable without restoring the removed recording', async () => {
   const audio = new Audio();
   audio.createStereoPanner = undefined;
   assert.equal(await music.createPlayer(audio, 0, new Timers()).start(), 'unavailable');
+  assert.equal(await music.createGeneratedPlayer(audio, 'N3ON-4821', new Timers()).start(), 'unavailable');
   assert.equal(audio.nodes.length, 0);
-  const run = game('?mode=daily&track=2');
-  await new Promise(resolve => setImmediate(resolve));
-  assert(run.get('#bgm').plays > 0);
-});
-
-test('daily music follows the Music setting while generated runs retain their soundtrack', async () => {
-  const run = game('?mode=daily&track=3');
-  await new Promise(resolve => setImmediate(resolve));
-  vm.runInContext(`stopMusic();dailyMusic={starts:0,stops:0,start(){this.starts++;return Promise.resolve('playing')},stop(){this.stops++}};startMusic();`, run.context);
-  const originalPlays = run.get('#bgm').plays;
-  assert.equal(vm.runInContext('dailyMusic.starts', run.context), 1);
-  run.get('setting-music').onclick();
-  assert.equal(vm.runInContext('settings.music', run.context), false);
-  assert.equal(vm.runInContext('dailyMusic.stops', run.context), 1);
-  run.get('setting-music').onclick();
-  assert.equal(vm.runInContext('dailyMusic.starts', run.context), 2);
-  assert.equal(run.get('#bgm').plays, originalPlays);
-  const generated = game('?mode=generated&seed=N3ON-4821');
-  assert.equal(generated.get('#bgm').plays, 1);
-  assert.equal(vm.runInContext('dailyMusic', generated.context), undefined);
-});
-
-test('first touch preserves custom music position and does not pause or replay it', () => {
-  const run = game('?mode=generated&seed=N3ON-4821');
-  const bgm = run.get('#bgm'), pauses = bgm.pauses, plays = bgm.plays;
-  bgm.currentTime = 1.5;
-  run.listeners.get('pointerdown')[0]();
-  assert.equal(bgm.currentTime, 1.5);
-  assert.equal(bgm.pauses, pauses);
-  assert.equal(bgm.plays, plays);
-  run.get('#again').onclick();
-  assert.equal(bgm.currentTime, 0, 'an actual retry restarts the song');
-  assert.equal(bgm.plays, plays + 1);
-});
-
-test('first touch resumes daily audio without replacing its synth or queued notes', async () => {
-  const run = game('?mode=daily&track=3', {}, 844, { AudioContext: Audio });
-  await new Promise(resolve => setImmediate(resolve));
-  const audio = vm.runInContext('audio', run.context);
-  const count = audio.sources.length, buffers = audio.buffers.length, resumes = audio.resumeCalls;
-  const stops = audio.sources.map(source => source.stops.length);
-  assert(count > 0);
-  audio.currentTime = .12;
-  run.listeners.get('pointerdown')[0]();
-  assert.equal(audio.sources.length, count, 'the first gesture must not restart the arrangement');
-  assert.equal(audio.buffers.length, buffers);
-  assert.deepEqual(audio.sources.map(source => source.stops.length), stops);
-  assert(audio.resumeCalls > resumes, 'the gesture still unlocks suspended audio');
-  assert.equal(run.get('#bgm').plays, 0);
-  run.get('#again').onclick();
-  assert(audio.sources.length > count);
-  assert.equal(audio.sources[count].startTime, .145);
-});
-
-test('first touch retries blocked media playback without seeking, including daily fallback', async () => {
-  for (const search of ['?mode=generated&seed=N3ON-4821', '?mode=daily&track=2']) {
-    const run = game(search);
-    await new Promise(resolve => setImmediate(resolve));
-    const bgm = run.get('#bgm'), plays = bgm.plays;
-    bgm.paused = true;
-    bgm.currentTime = .7;
-    run.listeners.get('pointerdown')[0]();
-    assert.equal(bgm.plays, plays + 1);
-    assert.equal(bgm.currentTime, .7);
+  for (const mode of modes) {
+    const run = game(mode);
+    await flush();
+    assert.equal(inspect(run, 'game.running'), true);
+    assert.equal(inspect(run, 'musicStarted'), false);
+    assert.equal(run.get('#bgm').plays, 0);
   }
+  const html = fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8');
+  assert(!/<audio\s+id="bgm"/.test(html));
+  assert(/<audio\s+id="menu-bgm"/.test(html));
+});
+
+test('daily and generated music both honor mute and release the playing arrangement', async () => {
+  for (const mode of modes) {
+    const run = game(mode, {}, 844, { AudioContext: Audio });
+    await flush();
+    const audio = inspect(run, 'audio'), sources = [...audio.sources];
+    assert(sources.length > 0);
+    run.get('setting-music').onclick();
+    assert.equal(inspect(run, 'settings.music'), false);
+    assert.equal(inspect(run, 'musicStarted'), false);
+    assert(sources.every(source => source.stops.at(-1) === 0));
+    assert(audio.nodes.every(node => node.connections.size === 0));
+    run.get('setting-music').onclick();
+    assert(audio.sources.length > sources.length);
+    assert.equal(run.get('#bgm').plays, 0);
+  }
+});
+
+test('first touch resumes daily and custom synths without restarting; retries restart cleanly', async () => {
+  for (const mode of modes) {
+    const run = game(mode, {}, 844, { AudioContext: Audio });
+    await flush();
+    const audio = inspect(run, 'audio'), initial = opening(audio);
+    const count = audio.sources.length, buffers = audio.buffers.length, resumes = audio.resumeCalls;
+    const stops = audio.sources.map(source => source.stops.length);
+    assert(count > 0);
+    audio.currentTime = .12;
+    run.listeners.get('pointerdown')[0]();
+    assert.equal(audio.sources.length, count);
+    assert.equal(audio.buffers.length, buffers);
+    assert.deepEqual(audio.sources.map(source => source.stops.length), stops);
+    assert(audio.resumeCalls > resumes);
+    assert.equal(run.get('#bgm').plays, 0);
+    run.get('#again').onclick();
+    assert(audio.sources.length > count);
+    assert.equal(audio.sources[count].startTime, .145);
+    const retried = opening(audio).slice(count);
+    assert.deepEqual(retried.map(({type,frequency}) => ({type,frequency})), initial.map(({type,frequency}) => ({type,frequency})));
+  }
+});
+
+test('shared custom track codes reproduce the music independently of screen size and saved preferences', async () => {
+  const run = game('?mode=generated&seed=N3ON-4821', {}, 844, { AudioContext: Audio });
+  await flush();
+  const score = inspect(run, 'ThreadDailyMusic.generatedArrangement(runSeed)');
+  const code = new URL(inspect(run, 'ThreadTracks.trackUrl("generated", runSeed, location.href, runMix, runOptions)')).search;
+  const friend = game(code, {}, 600, { AudioContext: Audio, width: 360,
+    storage: { 'thread-power-mix': '000000' } });
+  await flush();
+  assert.equal(JSON.stringify(score), JSON.stringify(inspect(friend, 'ThreadDailyMusic.generatedArrangement(runSeed)')));
+  assert.deepEqual(opening(inspect(run, 'audio')), opening(inspect(friend, 'audio')));
+  const different = game('?mode=generated&seed=WAVE-9328', {}, 844, { AudioContext: Audio });
+  await flush();
+  assert.notDeepEqual(opening(inspect(run, 'audio')), opening(inspect(different, 'audio')));
 });
 
 test('first touch honors muted music in daily and custom tracks', () => {
-  for (const search of ['?mode=generated&seed=N3ON-4821', '?mode=daily&track=3']) {
-    const run = game(search, {}, 844, { AudioContext: Audio,
+  for (const mode of modes) {
+    const run = game(mode, {}, 844, { AudioContext: Audio,
       storage: { 'thread-settings': JSON.stringify({ music: false }) } });
     run.listeners.get('pointerdown')[0]();
     assert.equal(run.get('#bgm').plays, 0);
-    assert.equal(vm.runInContext('audio.sources.length', run.context), 0);
+    assert.equal(inspect(run, 'audio.sources.length'), 0);
     run.get('setting-music').onclick();
-    assert(search.includes('daily') ? vm.runInContext('audio.sources.length', run.context) > 0 : run.get('#bgm').plays === 1);
+    assert(inspect(run, 'audio.sources.length') > 0);
   }
 });
 
-test('an old daily startup cannot trigger fallback music over a newer run', async () => {
-  const run = game('?mode=daily&track=3', {}, 844, { AudioContext: Audio });
-  await new Promise(resolve => setImmediate(resolve));
-  vm.runInContext(`
+test('an old startup result cannot change the current music session', async () => {
+  const run = game('?mode=generated&seed=N3ON-4821', {}, 844, { AudioContext: Audio });
+  await flush();
+  inspect(run, `
     stopMusic();
     let finishOldStart;
-    dailyMusic = { start: () => new Promise(resolve => finishOldStart = resolve), stop() {} };
+    trackMusic = { start: () => new Promise(resolve => finishOldStart = resolve), stop() {} };
     startMusic();
     stopMusic();
-    dailyMusic.start = () => Promise.resolve('playing');
+    trackMusic.start = () => Promise.resolve('playing');
     startMusic();
     finishOldStart('unavailable');
-  `, run.context);
-  await new Promise(resolve => setImmediate(resolve));
+  `);
+  await flush();
+  assert.equal(inspect(run, 'musicStarted'), true);
   assert.equal(run.get('#bgm').plays, 0);
 });

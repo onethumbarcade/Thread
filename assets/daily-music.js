@@ -12,6 +12,64 @@
 
   function arrangement(index) {
     const profile = profiles[((index % profiles.length) + profiles.length) % profiles.length];
+    return compose(profile);
+  }
+
+  function musicSeed(code) {
+    const normalized = String(code).trim().toUpperCase().replace(/[\s\-\u2010-\u2015\u2212]/g, "");
+    let seed = 2166136261;
+    for (const char of `thread-music-v1:${normalized}`) {
+      seed = Math.imul(seed ^ char.charCodeAt(0), 16777619);
+    }
+    return seed >>> 0;
+  }
+
+  function generatedArrangement(code) {
+    // A separate random stream keeps the music stable without changing the course.
+    let state = musicSeed(code);
+    function random() {
+      let value = (state += 0x6d2b79f5);
+      value = Math.imul(value ^ (value >>> 15), value | 1);
+      value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+      return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+    }
+    const pick = values => values[Math.floor(random() * values.length)];
+    // Diatonic progressions and chord-tone motifs keep the random parts musical.
+    const progression = pick([
+      { chords: [0, -4, 3, -2], minor: [true, false, false, false] },
+      { chords: [0, 5, -4, 7], minor: [true, true, false, true] },
+      { chords: [0, 3, -4, 5], minor: [true, false, false, true] },
+      { chords: [0, -2, 5, -4], minor: [true, false, true, false] },
+      { chords: [0, 7, -4, -2], minor: [true, true, false, false] },
+    ]);
+    const riff = [pick([0, 2])];
+    let tone = riff[0];
+    for (let step = 1; step < 7; step++) {
+      tone = Math.max(0, Math.min(4, tone + pick([-1, -1, 0, 1, 1, 2])));
+      riff.push(step % 2 && random() < .18 ? -1 : tone);
+    }
+    riff.push(pick([0, 2, -1]));
+    const response = riff.map((note, step) => note < 0 ? -1 :
+      step % 2 ? Math.max(0, Math.min(4, note + pick([-1, 0, 1]))) : note);
+    response[7] = 0;
+    return compose({
+      name: "Custom Track",
+      bpm: 122 + Math.floor(random() * 13) * 2,
+      root: 36 + Math.floor(random() * 12),
+      ...progression,
+      riff,
+      response,
+      bass: pick([
+        [0, 3, 6, 8, 11, 14], [0, 2, 4, 7, 8, 10, 12, 15],
+        [0, 2, 5, 8, 10, 13, 15], [0, 3, 4, 8, 11, 12],
+        [0, 4, 6, 8, 12, 14], [0, 2, 6, 8, 10, 14],
+      ]),
+      lead: pick(["square", "triangle", "sawtooth"]),
+      cutoff: 2400 + Math.floor(random() * 25) * 100,
+    });
+  }
+
+  function compose(profile) {
     const beat = 60 / profile.bpm;
     const events = [];
     for (let bar = 0; bar < 16; bar++) {
@@ -27,8 +85,9 @@
         if (step % 2 === 0 || (bar % 4 === 3 && step > 11)) events.push({ kind: "hat", time: at, open: step === 14, pan: step % 4 ? .25 : -.25 });
         if (profile.bass.includes(step)) events.push({ kind: "bass", time: at, length: beat * .35, note: root + (step === 14 ? 12 : 0) });
         if (step % 2 === 0) {
-          const riffIndex = (step / 2 + (bar % 2 ? 2 : 0)) % profile.riff.length;
-          const tone = profile.riff[riffIndex];
+          const riff = profile.response && bar % 4 >= 2 ? profile.response : profile.riff;
+          const riffIndex = (step / 2 + (bar % 2 ? 2 : 0)) % riff.length;
+          const tone = riff[riffIndex];
           if (tone >= 0) events.push({ kind: "lead", time: at, length: beat * (step === 14 ? .8 : .36), note: root + 24 + tones[tone], pan: .12 });
         }
         if (bar >= 8 && step % 2 === 1) events.push({ kind: "arp", time: at, length: beat * .18, note: root + 24 + tones[(step + bar) % 3], pan: step % 4 === 1 ? -.45 : .45 });
@@ -133,7 +192,14 @@
   }
 
   function createPlayer(context, index, timers = globalThis) {
-    const score = arrangement(index);
+    return createScorePlayer(context, arrangement(index), index, timers);
+  }
+
+  function createGeneratedPlayer(context, code, timers = globalThis) {
+    return createScorePlayer(context, generatedArrangement(code), musicSeed(code), timers);
+  }
+
+  function createScorePlayer(context, score, index, timers) {
     let synth, timer, generation = 0;
 
     function stop() {
@@ -176,5 +242,5 @@
     return { start, stop };
   }
 
-  globalThis.ThreadDailyMusic = { arrangement, createPlayer };
+  globalThis.ThreadDailyMusic = { arrangement, generatedArrangement, createPlayer, createGeneratedPlayer };
 })();
