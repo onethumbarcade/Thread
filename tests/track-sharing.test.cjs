@@ -9,8 +9,8 @@ const read = name => fs.readFileSync(path.join(root, name), 'utf8');
 const { game, gameScript, element } = require('./game-harness.cjs');
 const base = 'https://onethumbarcade.github.io/Thread/update-2-preview.html';
 
-function sharing(navigator = {}) {
-  const context = vm.createContext({ navigator, URL, location: { href: base } });
+function sharing(navigator = {}, location = { href: base }) {
+  const context = vm.createContext({ navigator, URL, location });
   vm.runInContext(read('assets/track-sharing.js'), context);
   return context.ThreadTracks;
 }
@@ -55,9 +55,10 @@ test('code-entry loads the requested track and sharing uses that same code', asy
   const get = id => { if (!elements.has(id)) elements.set(id, element(id)); return elements.get(id); };
   get('#track-code-form').hidden = true;
   let copied;
+  const location = { href: base };
   const context = vm.createContext({
-    document: { querySelector: get }, location: { href: base },
-    ThreadTracks: sharing({ clipboard: { writeText: async value => { copied = value; } } }),
+    document: { querySelector: get }, location,
+    ThreadTracks: sharing({ clipboard: { writeText: async value => { copied = value; } } }, location),
   });
   vm.runInContext(read('assets/generated-track-menu.js'), context);
   const original = get('#seed').textContent;

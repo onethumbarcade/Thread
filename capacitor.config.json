@@ -1,0 +1,29 @@
+{
+  "appId": "com.onethumbarcade.thread",
+  "appName": "THREAD",
+  "webDir": "dist",
+  "backgroundColor": "#02040b",
+  "server": {
+    "appStartPath": "update-2-preview.html",
+    "hostname": "localhost",
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false
+  },
+  "ios": {
+    "contentInset": "automatic"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "launchShowDuration": 0,
+      "backgroundColor": "#02040b",
+      "showSpinner": false
+    },
+    "SystemBars": {
+      "style": "DARK",
+      "insetsHandling": "css"
+    }
+  }
+}

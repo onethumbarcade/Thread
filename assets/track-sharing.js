@@ -27,6 +27,7 @@
   }
 
   async function share(data) {
+    if (globalThis.ThreadNative?.isNative) return ThreadNative.share(data);
     if (typeof navigator.share === "function") {
       try {
         await navigator.share(data);
@@ -44,5 +45,10 @@
     }
   }
 
-  globalThis.ThreadTracks = { normalizeCode, newCode, trackUrl, share };
+  function navigate(url) {
+    if (globalThis.ThreadNative?.isNative) return ThreadNative.navigate(url);
+    location.href = url;
+  }
+  const shareUrl = url => globalThis.ThreadNative?.isNative ? ThreadNative.shareUrl(url) : url;
+  globalThis.ThreadTracks = { normalizeCode, newCode, trackUrl, shareUrl, share, navigate };
 })();

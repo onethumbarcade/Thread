@@ -109,9 +109,9 @@
   <div class="ad">DISPLAY AD AREA</div>
   <audio id="menu-music" loop preload="auto" src="assets/thread-menu.mp3"></audio>
   <script src="assets/menu-panels.js?v=track-options-1"></script>
-  <script src="assets/track-sharing.js?v=track-options-1"></script>
+  <script src="assets/track-sharing.js?v=native-app-1"></script>
   <script src="assets/daily-tracks.js?v=daily-variety-2"></script>
-  <script src="assets/leaderboard.js?v=daily-variety-2"></script>
+  <script src="assets/leaderboard.js?v=native-app-1"></script>
   <script src="assets/power-ups.js?v=track-options-1"></script>
   <script src="assets/track-options.js?v=daily-variety-2"></script>
   <script src="assets/power-up-menu.js?v=track-options-1"></script>
@@ -135,7 +135,15 @@
     document.querySelector('#today-id').textContent=`TODAY’S TRACK: #${day}`;document.querySelector('#today-date').textContent=fmt.format(now).toUpperCase();document.querySelector('#home-today').textContent=`Track #${day} · ${fmt.format(now)}`;document.querySelector('#track-code').textContent=dailyShape;document.querySelector('#attempts').textContent=attempts;document.querySelector('#daily-best').textContent='—';
     function show(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelector('.topbar').hidden=id==='home';scrollTo(0,0);globalThis.ThreadLeaderboardMenu?.open(id)}document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
     let settings={sfx:true,music:true,haptics:true,reduced:false};try{settings={...settings,...JSON.parse(localStorage.getItem('thread-settings')||'{}')}}catch(e){}const menuMusic=document.querySelector('#menu-music');menuMusic.volume=.34;function syncMusic(){settings.music?menuMusic.play().catch(()=>{}):menuMusic.pause()}function refreshSettings(){document.querySelectorAll('[data-setting]').forEach(b=>b.classList.toggle('on',!!settings[b.dataset.setting]));document.body.classList.toggle('reduced-motion',!!settings.reduced)}document.querySelectorAll('[data-setting]').forEach(b=>b.onclick=()=>{settings[b.dataset.setting]=!settings[b.dataset.setting];try{localStorage.setItem('thread-settings',JSON.stringify(settings))}catch(e){}refreshSettings();syncMusic()});refreshSettings();addEventListener('pointerdown',syncMusic,{once:true});syncMusic();
-    const playDaily=n=>location.href=`index.html?mode=daily&track=${n}`;
+    globalThis.ThreadAppBack=()=>{
+      const active=document.querySelector('.view.active');
+      if(!active || active.id==='home')return false;
+      if(active.id==='leaderboard')document.querySelector('#leaderboard-back').click();
+      else { const back=active.querySelector('.back,.thread-menu-back');back?back.click():show('home'); }
+      return true;
+    };
+    addEventListener('thread:app-state',event=>event.detail.isActive?syncMusic():menuMusic.pause());
+    const playDaily=n=>ThreadTracks.navigate(`index.html?mode=daily&track=${n}`);
     const list=document.querySelector('#archive-list');
     for(let i=0;i<24;i++){
       const n=day-i;if(n<1)break;
@@ -146,8 +154,8 @@
     document.querySelector('#play-daily').onclick=()=>playDaily(ThreadDaily.today());
     addEventListener('visibilitychange',()=>{if(!document.hidden && ThreadDaily.today()!==day)location.reload()});
   </script>
-  <script src="assets/result-navigation.js?v=result-return-1"></script>
+  <script src="assets/result-navigation.js?v=native-app-1"></script>
   <script src="assets/leaderboard-menu.js?v=result-return-1"></script>
-  <script src="assets/generated-track-menu.js?v=track-leaderboards-1"></script>
+  <script src="assets/generated-track-menu.js?v=native-app-1"></script>
 </body>
 </html>

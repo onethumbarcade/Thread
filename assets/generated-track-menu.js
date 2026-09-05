@@ -47,7 +47,7 @@
   };
   document.querySelector("#play-generated").onclick = () => {
     if (dirty) return;
-    location.href = ThreadTracks.trackUrl("generated", seed.textContent, location.href, trackOptions?.powers, trackOptions);
+    ThreadTracks.navigate(ThreadTracks.trackUrl("generated", seed.textContent, location.href, trackOptions?.powers, trackOptions));
   };
   entryButton.onclick = () => {
     clearFeedback();
@@ -78,7 +78,7 @@
     if (dirty) return;
     clearFeedback();
     const code = seed.textContent;
-    const url = ThreadTracks.trackUrl("generated", code, location.href, trackOptions?.powers, trackOptions);
+    const url = ThreadTracks.shareUrl(ThreadTracks.trackUrl("generated", code, location.href, trackOptions?.powers, trackOptions));
     shareButton.disabled = true;
     try {
       const result = await ThreadTracks.share({

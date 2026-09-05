@@ -1,0 +1,32 @@
+{
+  "name": "one-thumb-arcade-thread",
+  "version": "0.1.0",
+  "private": true,
+  "description": "THREAD by One Thumb Arcade — shared web and mobile game",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build:mobile": "node scripts/build-mobile.mjs",
+    "sync:mobile": "npm run build:mobile && cap sync",
+    "open:android": "cap open android",
+    "open:ios": "cap open ios",
+    "test": "node --test tests/*.test.cjs",
+    "test:mobile": "node --test tests/mobile.test.cjs"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.1",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "8.5.1",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/ios": "8.5.1",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/share": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "8.5.1",
+    "esbuild": "0.28.2"
+  }
+}

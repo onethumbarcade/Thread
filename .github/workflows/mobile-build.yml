@@ -1,0 +1,82 @@
+name: Mobile builds
+on:
+  push:
+    branches: [main, codex/native-app-foundation]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mobile-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm test
+      - run: npm run sync:mobile
+      - name: Build Android test APK and unsigned release bundle
+        working-directory: android
+        run: bash gradlew --no-daemon assembleDebug bundleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: THREAD-Android-test
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: THREAD-Android-unsigned-release
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Select installed Xcode 26 or later
+        run: |
+          python3 - <<'PY'
+          import glob, re, subprocess
+          candidates = []
+          for app in glob.glob('/Applications/Xcode*.app'):
+              match = re.search(r'Xcode_(\d+)(?:\.(\d+))?', app)
+              if match and int(match[1]) >= 26 and 'beta' not in app.lower():
+                  candidates.append(((int(match[1]), int(match[2] or 0)), app))
+          if candidates:
+              subprocess.run(['sudo', 'xcode-select', '-s', max(candidates)[1]], check=True)
+          subprocess.run(['xcodebuild', '-version'], check=True)
+          PY
+      - run: npm ci
+      - run: npm run sync:mobile
+      - name: Build iOS simulator app without signing
+        run: |
+          if ! xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/DerivedData CODE_SIGNING_ALLOWED=NO build > ios-build.log 2>&1; then
+            tail -n 100 ios-build.log
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: THREAD-iOS-simulator
+          path: ios/DerivedData/Build/Products/Debug-iphonesimulator/App.app
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: THREAD-iOS-build-log
+          path: ios-build.log

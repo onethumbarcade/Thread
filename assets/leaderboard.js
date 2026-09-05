@@ -22,7 +22,8 @@
   async function request(body, query = '') {
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 5000);
     try {
-      const response = await fetch(API + query, {
+      const send = globalThis.ThreadNative?.isNative ? ThreadNative.request : fetch;
+      const response = await send(API + query, {
         method: body ? 'POST' : 'GET', credentials: 'omit', signal: controller.signal,
         headers: { Authorization: 'Bearer ' + token, ...(body ? { 'Content-Type': 'application/json' } : {}) },
         ...(body ? { body: JSON.stringify(body) } : {}),

@@ -63,13 +63,13 @@
       const referrer = new URL(document.referrer), gameUrl = new URL('index.html', location.href);
       if (referrer.origin === gameUrl.origin && referrer.pathname === gameUrl.pathname &&
           referrer.searchParams.get('mode') === 'daily' && history.length > 1) {
-        history.back(); return true;
+        globalThis.ThreadNative?.isNative ? ThreadNative.back() : history.back(); return true;
       }
     } catch {}
     if (!record) return false;
     const url = new URL(record.url);
     url.searchParams.set('result', record.id);
-    location.replace(url.href);
+    globalThis.ThreadNative?.isNative ? ThreadNative.navigate(url.href, true) : location.replace(url.href);
     return true;
   }
   globalThis.ThreadResultNavigation = { save, restore, clear, leaderboardUrl, back };

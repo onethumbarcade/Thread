@@ -1,0 +1,10 @@
+html,body{background:#02040b;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+body{user-select:none;-webkit-user-select:none}
+input,textarea{user-select:text;-webkit-user-select:text}
+.native-only{display:block}
+.ad{display:none!important}
+.app{padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+#native-status{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom));left:16px;right:16px;z-index:1000;padding:16px;border:1px solid #65efff;border-radius:14px;background:#091124;color:#f7fbff;font:16px/1.4 system-ui;text-align:center}
+.native-start-error{margin:20vh auto 0;width:min(88vw,390px);padding:24px;text-align:center;color:#f7fbff;font-family:system-ui}
+.native-start-error h1{color:#65efff;letter-spacing:4px}
+.native-start-error button{padding:16px 28px;border:0;border-radius:14px;background:linear-gradient(100deg,#35c5ff,#b783ff);color:#07142c;font-weight:800}
