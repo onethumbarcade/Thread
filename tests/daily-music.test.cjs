@@ -13,30 +13,50 @@ const param = () => ({ value: 0,
   exponentialRampToValueAtTime(value, time) { assert(value > 0 && time >= 0); },
 });
 const node = () => ({
+  connections: new Set(), stops: [],
   gain: param(), frequency: param(), detune: param(), Q: param(), pan: param(), delayTime: param(),
   threshold: param(), knee: param(), ratio: param(), attack: param(), release: param(),
-  connect(target) { return target; }, disconnect() {},
-  start(time = 0) { assert(Number.isFinite(time) && time >= 0); this.started = true; },
-  stop(time = 0) { assert(Number.isFinite(time) && time >= 0); this.stopped = true; },
+  connect(target) { this.connections.add(target); return target; },
+  disconnect() { this.connections.clear(); },
+  start(time = 0) { assert(Number.isFinite(time) && time >= 0); this.startTime = time; },
+  stop(time = 0) { assert(Number.isFinite(time) && time >= 0); this.stops.push(time); },
 });
 class Audio {
-  destination = node(); sources = [];
-  createGain() { return node(); }
+  currentTime = 0; destination = node(); sources = []; nodes = []; buffers = [];
+  makeNode() { const result = node(); this.nodes.push(result); return result; }
+  createGain() { return this.makeNode(); }
   createBuffer(channels, length, rate) {
     const arrays = Array.from({ length: channels }, () => new Float32Array(length));
-    return { length, sampleRate: rate, getChannelData: channel => arrays[channel], copyToChannel: (data, channel) => arrays[channel].set(data) };
+    const buffer = { length, sampleRate: rate, getChannelData: channel => arrays[channel] };
+    this.buffers.push(buffer);
+    return buffer;
   }
-  createBufferSource() { const source = node(); this.sources.push(source); return source; }
+  createBufferSource() { const source = this.makeNode(); this.sources.push(source); return source; }
+  createOscillator() { return this.createBufferSource(); }
+  createDynamicsCompressor() { return this.makeNode(); }
+  createDelay() { return this.makeNode(); }
+  createStereoPanner() { return this.makeNode(); }
+  createBiquadFilter() { return this.makeNode(); }
+  advance(time) {
+    this.currentTime = time;
+    for (const source of this.sources) {
+      if (!source.ended && source.stops.at(-1) <= time) {
+        source.ended = true;
+        source.onended?.();
+      }
+    }
+  }
 }
-let renders = 0, finishRender;
-class Offline extends Audio {
-  constructor(channels, length, rate) { super(); this.result = this.createBuffer(channels, length, rate); }
-  createDynamicsCompressor() { return node(); }
-  createDelay() { return node(); }
-  createStereoPanner() { return node(); }
-  createBiquadFilter() { return node(); }
-  createOscillator() { return node(); }
-  async startRendering() { renders++; return this.result; }
+class Timers {
+  pending = new Map(); next = 0;
+  setTimeout(callback, delay) { assert.equal(delay, 50); this.pending.set(++this.next, callback); return this.next; }
+  clearTimeout(id) { this.pending.delete(id); }
+  tick(audio, time) {
+    audio.advance(time);
+    const callbacks = [...this.pending.values()];
+    this.pending.clear();
+    callbacks.forEach(callback => callback());
+  }
 }
 
 test('seven distinct arrangements use repeatable melodies, rhythms and valid audio schedules', async () => {
@@ -50,36 +70,81 @@ test('seven distinct arrangements use repeatable melodies, rhythms and valid aud
       if ('note' in event) assert(event.note > 20 && event.note < 110);
     }
     signatures.add(JSON.stringify(score.events));
-    const audio = new Audio(), player = music.createPlayer(audio, index, Offline);
+    const audio = new Audio(), timers = new Timers(), player = music.createPlayer(audio, index, timers);
     assert.equal(await player.start(), 'playing');
-    const source = audio.sources.at(-1);
-    assert.equal(source.loop, true);
-    assert.equal(source.buffer.length, Math.round(score.duration * source.buffer.sampleRate));
+    for (let time = .05; time < score.duration + .05; time += .05) timers.tick(audio, time);
+    // Every note in the first pass plays once, followed by the start of the next loop.
+    assert(audio.sources.length > score.events.length);
+    score.events.forEach((event, i) => assert(Math.abs(audio.sources[i].startTime - event.time - .025) < 1e-8));
+    assert(Math.abs(audio.sources[score.events.length].startTime - score.duration - .025) < 1e-8);
+    assert(audio.sources.filter(source => !source.ended).length < 60, 'finished voices are released during playback');
     player.stop();
-    assert.equal(source.stopped, true);
+    assert.equal(timers.pending.size, 0);
+    assert(audio.nodes.every(node => node.connections.size === 0));
   }
   assert.equal(signatures.size, 7);
 });
 
-test('muting during rendering prevents late playback; retries reuse the rendered loop', async () => {
-  class Pending extends Offline {
-    startRendering() { renders++; return new Promise(resolve => { finishRender = () => resolve(this.result); }); }
-  }
-  const audio = new Audio(), player = music.createPlayer(audio, 2, Pending);
-  const before = renders, pending = player.start();
-  player.stop(); finishRender();
-  assert.equal(await pending, 'cancelled');
-  assert.equal(audio.sources.length, 0);
-  assert.equal(await player.start(), 'playing');
-  const first = audio.sources.at(-1);
-  assert.equal(await player.start(), 'playing');
-  assert.equal(first.stopped, true);
-  assert.equal(renders, before + 1);
+test('daily music schedules its opening immediately, without rendering a whole song', async () => {
+  const audio = new Audio(), timers = new Timers(), player = music.createPlayer(audio, 0, timers);
+  audio.currentTime = 100;
+  const started = player.start();
+  // Check before awaiting the return value: the opening is already queued.
+  assert(audio.sources.length > 0 && audio.sources.length < 20);
+  assert.equal(audio.sources[0].startTime, 100.025);
+  assert(audio.sources.every(source => source.startTime < 100.25));
+  assert.equal(audio.buffers.length, 1);
+  assert.equal(audio.buffers[0].length / audio.buffers[0].sampleRate, 1, 'only a short percussion noise buffer is created');
+  const count = audio.sources.length;
+  timers.tick(audio, 100.2);
+  assert(audio.sources.length > count);
+  assert(audio.sources.slice(count).every(source => source.startTime >= 100.2 && source.startTime < 100.45));
+  assert.equal(await started, 'playing');
   player.stop();
 });
 
-test('unavailable rendering signals fallback to the existing game music', async () => {
-  assert.equal(await music.createPlayer(new Audio(), 0, null).start(), 'unavailable');
+test('muting cancels queued notes and echoes; retries replace the previous schedule', async () => {
+  const audio = new Audio(), timers = new Timers(), player = music.createPlayer(audio, 2, timers);
+  assert.equal(await player.start(), 'playing');
+  const stale = [...timers.pending.values()][0];
+  const previous = [...audio.sources];
+  player.stop();
+  assert.equal(timers.pending.size, 0);
+  assert(previous.every(source => source.stops.at(-1) === 0));
+  assert(audio.nodes.every(node => node.connections.size === 0));
+  stale();
+  assert.equal(audio.sources.length, previous.length);
+  audio.advance(5);
+  assert.equal(await player.start(), 'playing');
+  assert.equal(audio.sources[previous.length].startTime, 5.025);
+  const count = audio.sources.length, second = [...audio.sources];
+  assert.equal(await player.start(), 'playing');
+  assert(second.every(source => source.stops.at(-1) === 0));
+  assert.equal(timers.pending.size, 1);
+  assert.equal(audio.sources[count].startTime, 5.025);
+  const after = audio.sources.length;
+  stale();
+  assert.equal(audio.sources.length, after);
+  player.stop();
+});
+
+test('a stalled tab skips missed notes instead of playing a burst of old music', async () => {
+  const audio = new Audio(), timers = new Timers(), player = music.createPlayer(audio, 0, timers);
+  assert.equal(await player.start(), 'playing');
+  const before = audio.sources.length, now = music.arrangement(0).duration * 40 + 3;
+  timers.tick(audio, now);
+  const added = audio.sources.slice(before);
+  assert(added.length > 0 && added.length < 20);
+  assert(added.every(source => source.startTime >= now && source.startTime < now + .25));
+  assert.equal(timers.pending.size, 1);
+  player.stop();
+});
+
+test('unavailable synthesis signals fallback to the existing game music', async () => {
+  const audio = new Audio();
+  audio.createStereoPanner = undefined;
+  assert.equal(await music.createPlayer(audio, 0, new Timers()).start(), 'unavailable');
+  assert.equal(audio.nodes.length, 0);
   const run = game('?mode=daily&track=2');
   await new Promise(resolve => setImmediate(resolve));
   assert(run.get('#bgm').plays > 0);

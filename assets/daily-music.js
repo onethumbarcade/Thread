@@ -1,4 +1,4 @@
-// Original synthwave/chiptune arrangements. Render once, then loop a single buffer.
+// Original synthwave/chiptune arrangements, scheduled just ahead of playback.
 (() => {
   const profiles = [
     { name: "Neon Drive", bpm: 136, root: 38, chords: [0, -4, 3, -2], minor: [true, false, false, false], riff: [0, 2, 3, 2, 1, 2, 4, 2], bass: [0, 3, 6, 8, 11, 14], lead: "square", cutoff: 2900 },
@@ -39,29 +39,31 @@
 
   const hz = note => 440 * 2 ** ((note - 69) / 12);
 
-  async function render(index, OfflineContext) {
-    const score = arrangement(index);
+  function createSynth(context, score, index) {
+    const methods = ["createGain", "createDynamicsCompressor", "createDelay", "createBuffer", "createBufferSource", "createOscillator", "createBiquadFilter", "createStereoPanner"];
+    if (methods.some(method => typeof context?.[method] !== "function")) throw new Error("Web Audio unavailable");
     const sampleRate = 22050;
-    const length = Math.round(score.duration * sampleRate);
-    // The first pass warms the delay/pads; the second pass forms a continuous loop.
-    const offline = new OfflineContext(2, length * 2, sampleRate);
-    const compressor = offline.createDynamicsCompressor();
+    const voices = new Set();
+    const master = context.createGain();
+    master.gain.value = .6;
+    master.connect(context.destination);
+    const compressor = context.createDynamicsCompressor();
     compressor.threshold.value = -18;
     compressor.knee.value = 12;
     compressor.ratio.value = 3;
     compressor.attack.value = .004;
     compressor.release.value = .18;
-    compressor.connect(offline.destination);
-    const delay = offline.createDelay(1);
-    const feedback = offline.createGain();
-    const wet = offline.createGain();
+    compressor.connect(master);
+    const delay = context.createDelay(1);
+    const feedback = context.createGain();
+    const wet = context.createGain();
     delay.delayTime.value = 60 / score.profile.bpm * .75;
     feedback.gain.value = .22;
     wet.gain.value = .2;
     delay.connect(feedback).connect(delay);
     delay.connect(wet).connect(compressor);
 
-    const noise = offline.createBuffer(1, sampleRate, sampleRate);
+    const noise = context.createBuffer(1, sampleRate, sampleRate);
     const samples = noise.getChannelData(0);
     let state = 7319 + index * 997;
     for (let i = 0; i < samples.length; i++) {
@@ -70,8 +72,8 @@
     }
 
     function output(source, filter, time, attack, sustain, release, volume, pan = 0, echo = false) {
-      const gain = offline.createGain();
-      const panner = offline.createStereoPanner();
+      const gain = context.createGain();
+      const panner = context.createStereoPanner();
       panner.pan.value = pan;
       gain.gain.setValueAtTime(.0001, time);
       gain.gain.linearRampToValueAtTime(volume, time + attack);
@@ -79,76 +81,95 @@
       gain.gain.exponentialRampToValueAtTime(.0001, time + attack + sustain + release);
       source.connect(filter).connect(gain).connect(panner).connect(compressor);
       if (echo) panner.connect(delay);
+      const voice = { source, nodes: [source, filter, gain, panner] };
+      voices.add(voice);
+      source.onended = () => {
+        voice.nodes.forEach(node => node.disconnect());
+        voices.delete(voice);
+      };
       source.start(time);
       source.stop(time + attack + sustain + release + .01);
     }
 
-    for (let pass = 0; pass < 2; pass++) {
-      for (const event of score.events) {
-        const time = event.time + pass * length / sampleRate;
-        const filter = offline.createBiquadFilter();
-        if (event.kind === "hat" || event.kind === "snare") {
-          const source = offline.createBufferSource();
-          source.buffer = noise;
-          filter.type = "highpass";
-          filter.frequency.value = event.kind === "hat" ? 6500 : 1300;
-          output(source, filter, time, .001, .002, event.kind === "hat" ? (event.open ? .12 : .035) : .13, event.kind === "hat" ? .065 : .18, event.pan);
+    function note(event, time) {
+      const filter = context.createBiquadFilter();
+      if (event.kind === "hat" || event.kind === "snare") {
+        const source = context.createBufferSource();
+        source.buffer = noise;
+        filter.type = "highpass";
+        filter.frequency.value = event.kind === "hat" ? 6500 : 1300;
+        output(source, filter, time, .001, .002, event.kind === "hat" ? (event.open ? .12 : .035) : .13, event.kind === "hat" ? .065 : .18, event.pan);
+      } else {
+        const source = context.createOscillator();
+        filter.type = "lowpass";
+        if (event.kind === "kick") {
+          source.type = "sine";
+          source.frequency.setValueAtTime(145, time);
+          source.frequency.exponentialRampToValueAtTime(46, time + .12);
+          filter.frequency.value = 900;
+          output(source, filter, time, .002, .002, .19, .65);
         } else {
-          const source = offline.createOscillator();
-          filter.type = "lowpass";
-          if (event.kind === "kick") {
-            source.type = "sine";
-            source.frequency.setValueAtTime(145, time);
-            source.frequency.exponentialRampToValueAtTime(46, time + .12);
-            filter.frequency.value = 900;
-            output(source, filter, time, .002, .002, .19, .65);
-          } else {
-            source.frequency.value = hz(event.note);
-            const pad = event.kind === "pad", bass = event.kind === "bass", arp = event.kind === "arp";
-            source.type = pad ? "sawtooth" : bass ? "triangle" : arp ? "triangle" : score.profile.lead;
-            source.detune.value = pad ? event.pan * 12 : 0;
-            filter.frequency.value = pad ? 1350 : bass ? 800 : score.profile.cutoff;
-            filter.Q.value = .7;
-            output(source, filter, time, pad ? .16 : .008, event.length, pad ? .18 : .055, pad ? .035 : bass ? .21 : arp ? .045 : .07, event.pan, !pad && !bass);
-          }
+          source.frequency.value = hz(event.note);
+          const pad = event.kind === "pad", bass = event.kind === "bass", arp = event.kind === "arp";
+          source.type = pad ? "sawtooth" : bass ? "triangle" : arp ? "triangle" : score.profile.lead;
+          source.detune.value = pad ? event.pan * 12 : 0;
+          filter.frequency.value = pad ? 1350 : bass ? 800 : score.profile.cutoff;
+          filter.Q.value = .7;
+          output(source, filter, time, pad ? .16 : .008, event.length, pad ? .18 : .055, pad ? .035 : bass ? .21 : arp ? .045 : .07, event.pan, !pad && !bass);
         }
       }
     }
-    const rendered = await offline.startRendering();
-    return { rendered, length, sampleRate };
+    function stop() {
+      master.gain.value = 0;
+      for (const voice of voices) {
+        voice.source.onended = null;
+        voice.source.stop();
+        voice.nodes.forEach(node => node.disconnect());
+      }
+      voices.clear();
+      [master, compressor, delay, feedback, wet].forEach(node => node.disconnect());
+    }
+    return { note, stop };
   }
 
-  function createPlayer(context, index, OfflineContext = globalThis.OfflineAudioContext || globalThis.webkitOfflineAudioContext) {
-    let pending, buffer, source, generation = 0;
-    const gain = context.createGain();
-    gain.gain.value = .6;
-    gain.connect(context.destination);
+  function createPlayer(context, index, timers = globalThis) {
+    const score = arrangement(index);
+    let synth, timer, generation = 0;
 
     function stop() {
       generation++;
-      if (source) { source.stop(); source.disconnect(); source = null; }
+      if (timer != null) { timers.clearTimeout(timer); timer = null; }
+      synth?.stop();
+      synth = null;
     }
 
     async function start() {
       stop();
       const request = generation;
       try {
-        if (!buffer) {
-          pending ||= render(index, OfflineContext);
-          const loop = await pending;
-          if (request !== generation) return "cancelled";
-          buffer = context.createBuffer(2, loop.length, loop.sampleRate);
-          for (let channel = 0; channel < 2; channel++) buffer.copyToChannel(loop.rendered.getChannelData(channel).subarray(loop.length, loop.length * 2), channel);
+        synth = createSynth(context, score, index);
+        let loopStart = context.currentTime + .025, next = 0;
+        function schedule() {
+          if (request !== generation) return;
+          const now = context.currentTime;
+          // Resume at the current musical position after a background-tab stall;
+          // don't queue a burst of old notes when timers resume.
+          if (now >= loopStart + score.duration) {
+            loopStart += Math.floor((now - loopStart) / score.duration) * score.duration;
+            next = 0;
+          }
+          while (loopStart + score.events[next].time < now + .25) {
+            const event = score.events[next], time = loopStart + event.time;
+            if (time >= now - .01) synth.note(event, Math.max(now + .005, time));
+            if (++next === score.events.length) { next = 0; loopStart += score.duration; }
+          }
+          timer = timers.setTimeout(schedule, 50);
         }
-        if (request !== generation) return "cancelled";
-        source = context.createBufferSource();
-        source.buffer = buffer;
-        source.loop = true;
-        source.connect(gain);
-        source.start();
+        schedule();
         return "playing";
       } catch {
-        return request === generation ? "unavailable" : "cancelled";
+        stop();
+        return "unavailable";
       }
     }
 
