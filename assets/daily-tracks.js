@@ -31,5 +31,6 @@
     };
   }
 
-  globalThis.ThreadDaily = { getTrack };
+  const today = (now = Date.now()) => Math.max(1, Math.floor((Number(now) - Date.UTC(2026, 8, 4)) / 86400000) + 1);
+  globalThis.ThreadDaily = { getTrack, today };
 })();

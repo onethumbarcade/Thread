@@ -26,7 +26,7 @@ function game(search, navigator = {}, height = 844, options = {}) {
     const button = get('setting-' + key); button.dataset.setting = key; return button;
   });
   const context = vm.createContext({
-    URL, URLSearchParams, navigator,
+    URL, URLSearchParams, navigator, ThreadLeaderboard: options.leaderboard,
     location: { href: 'https://onethumbarcade.github.io/Thread/index.html' + search, search },
     innerWidth: options.width || 390, innerHeight: height, devicePixelRatio: 1, performance: { now: () => 0 },
     localStorage: { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, String(value)) },
