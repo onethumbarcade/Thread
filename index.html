@@ -748,10 +748,10 @@
     ></audio>
     <script src="assets/menu-panels.js?v=track-options-1"></script>
     <script src="assets/track-sharing.js?v=track-options-1"></script>
-    <script src="assets/daily-tracks.js?v=leaderboard-1"></script>
-    <script src="assets/leaderboard.js?v=anonymous-archive-1"></script>
+    <script src="assets/daily-tracks.js?v=daily-variety-2"></script>
+    <script src="assets/leaderboard.js?v=daily-variety-2"></script>
     <script src="assets/daily-music.js?v=generated-music-1"></script>
-    <script src="assets/track-options.js"></script>
+    <script src="assets/track-options.js?v=daily-variety-2"></script>
     <script src="assets/collectibles.js"></script>
     <script src="assets/power-ups.js?v=track-options-1"></script>
     <script>
@@ -807,14 +807,14 @@
         runTrack = runMode === "daily" ? String(ThreadDaily.getTrack(runParams.get("track") || ThreadDaily.today()).id) : null,
         runCode = runParams.get("seed"),
         dailyTrack = runMode === "daily" ? ThreadDaily.getTrack(runTrack) : null,
-        initialOptions = dailyTrack ? ThreadTrackOptions.normalize() : ThreadTrackOptions.fromUrl(runParams),
+        initialOptions = dailyTrack ? ThreadTrackOptions.normalize(dailyTrack.options) : ThreadTrackOptions.fromUrl(runParams),
         bestStorageKey =
           runMode === "daily" && runTrack
             ? `thread-daily-${runTrack}`
             : "thread-best",
         runSeed =
           runMode === "daily"
-            ? `daily-${runTrack || 1}`
+            ? dailyTrack.courseSeed
             : runCode || ThreadTracks.newCode();
       let runOptions = initialOptions, runMix = runOptions.powers;
       // Keep visual randomness separate from the shared track's seeded layout.
@@ -871,9 +871,9 @@
         while ((n.length - 1) * GAP < target) {
           const i = n.length,
             d = Math.min(1.5, i / 200),
-            max = Math.min(1.18, 0.28 + d * 0.68),
+            max = Math.min(1.18, (0.28 + d * 0.68) * (dailyTrack?.curveStrength || 1)),
             prev = n[i - 1] - n[i - 2];
-          let p = prev * 0.2 + (random() * 2 - 1) * max,
+          let p = prev * (dailyTrack?.curveMemory || 0.2) + (random() * 2 - 1) * max,
             min = d > 0.35 ? 0.08 + d * 0.13 : 0;
           if (Math.abs(p) < min) p = (random() < 0.5 ? -1 : 1) * min;
           n.push(n[i - 1] + Math.max(-max, Math.min(max, p)));
@@ -914,9 +914,9 @@
           ringOffset: 0,
           distance: 0,
           score: 0,
-          ringRadius: 34,
+          ringRadius: dailyTrack?.startSize || 34,
           energy: 100,
-          speed: 54,
+          speed: dailyTrack?.startSpeed || 54,
           random,
           // Independent continuation streams keep the layout stable across screen sizes.
           pickupRandom: seed == null ? Math.random : seededRandom(hashSeed(`${seed}:pickups`)),
@@ -936,8 +936,8 @@
           flash: 0,
           bombFlash: 0,
         };
-        if (!dailyTrack) {
-          if (runOptions.shapes !== "0123") {
+        if (!dailyTrack || dailyTrack.version >= 2) {
+          if (!dailyTrack && runOptions.shapes !== "0123") {
             state.shapeSequence = runOptions.shapes.split("").map(Number);
             state.shapeOffset = state.shapeSequence[0];
           }
@@ -1018,9 +1018,9 @@
         if (musicStarted) return;
         musicStarted = true;
         const session = musicSession;
-        trackMusic ||= dailyTrack
+        trackMusic ||= dailyTrack && !dailyTrack.musicSeed
           ? ThreadDailyMusic.createPlayer(audio, dailyTrack.musicIndex)
-          : ThreadDailyMusic.createGeneratedPlayer(audio, runSeed);
+          : ThreadDailyMusic.createGeneratedPlayer(audio, dailyTrack?.musicSeed || runSeed);
         trackMusic.start().then(outcome => {
           if (outcome === "unavailable" && session === musicSession) musicStarted = false;
         });
@@ -1075,7 +1075,7 @@
           runDistance = Math.floor((game?.distance || 0) / 10),
           runSize = Math.round(game?.ringRadius || 0),
           runSpeed = ((game?.speed || 54) / 54).toFixed(1),
-          runLevel = Math.floor((game?.score || 0) / STAGE) + 1,
+          runLevel = Math.floor((game?.score || 0) / (dailyTrack?.levelScore || STAGE)) + 1,
           shareUrl = ThreadTracks.trackUrl(
             runMode === "daily" ? "daily" : "generated",
             runMode === "daily" ? runTrack || 1 : runSeed,
@@ -1240,11 +1240,11 @@
           bottom = height - 150,
           ringY = Math.min(height * 0.6, height - 225),
           cr = Math.min(width * 0.4, 190),
-          stage = Math.floor(g.score / STAGE) + 1,
+          stage = Math.floor(g.score / (dailyTrack?.levelScore || STAGE)) + 1,
           s = g.shapeSequence ? g.shapeSequence[(stage - 1) % g.shapeSequence.length] : (stage - 1 + (g.shapeOffset || 0)) % 4,
           z = Math.max(0.74, 1 - (stage - 1) * 0.024),
           sw = [1, 0.92, 0.68, TRIANGLE_REACH][s] * z,
-          laser = LASERS[(stage - 1) % 5];
+          laser = LASERS[dailyTrack?.palette?.[(stage - 1) % 5] ?? (stage - 1) % 5];
         hud.style.setProperty("--laser", laser[0]);
         hud.style.setProperty("--laser-soft", laser[0] + "24");
         hud.style.setProperty("--laser-glow", laser[0] + "66");
@@ -1265,8 +1265,9 @@
           }
           ThreadPowerUps.extend(g.powerUps, g.distance + height * 2);
           ThreadPowerUps.tick(g.powerUps, dt);
-          const pace = g.powerUps.slow > 0 ? .6 : 1, playDt = dt * pace;
-          g.speed = (54 + g.distance / 105) * pace;
+          const pace = g.powerUps.slow > 0 ? .6 : 1, playDt = dt * pace,
+            baseSpeed = (dailyTrack?.startSpeed || 54) + g.distance / (dailyTrack?.accelerationDistance || 105);
+          g.speed = baseSpeed * pace;
           g.distance += g.speed * dt;
           const px = cx + cr * Math.sin(angle(g.nodes, g.distance)),
             rx = cx + g.ringOffset,
@@ -1304,7 +1305,7 @@
           } else if (!invincible) g.energy -= Math.min(80, 30 + g.distance / 240) * playDt;
           if (!invincible) g.ringRadius = Math.max(
             24,
-            g.ringRadius - (0.9 + ((54 + g.distance / 105) / 54 - 1) * 0.58) * playDt,
+            g.ringRadius - (0.9 + (baseSpeed / 54 - 1) * 0.58) * playDt,
           );
           for (const p of g.pickups)
             if (!p.resolved && p.magnetX == null && Math.abs(p.y - g.distance) < g.speed * dt + 3) {
@@ -1340,7 +1341,7 @@
                 }
               }
             }
-          const ns = Math.floor(g.score / STAGE) + 1;
+          const ns = Math.floor(g.score / (dailyTrack?.levelScore || STAGE)) + 1;
           if (ns > g.stage) {
             g.stage = ns;
             sound("level");
@@ -1419,7 +1420,7 @@
         for (let b = 0; b < 3; b++) {
           ctx.save();
           ctx.globalAlpha = 0.055 + b * 0.018;
-          ctx.strokeStyle = LASERS[(stage + b) % 5][0];
+          ctx.strokeStyle = LASERS[dailyTrack?.palette?.[(stage + b) % 5] ?? (stage + b) % 5][0];
           ctx.lineWidth = 70 + b * 24;
           ctx.shadowColor = ctx.strokeStyle;
           ctx.shadowBlur = 40;

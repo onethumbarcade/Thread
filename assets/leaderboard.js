@@ -54,13 +54,16 @@
   }
   function startRun(track) {
     // Resolve failure into the session so the render loop never sees a rejected promise.
-    const session = { track, ready: request({ action: 'start', track }).catch(error => ({ error })) };
+    const rulesVersion = globalThis.ThreadDaily?.getTrack(track).version || 1;
+    const session = { track, ready: request({ action: 'start', track, rulesVersion }).catch(error => ({ error })) };
     return session;
   }
   async function finishRun(session, result) {
     if (!session) return { unranked: true };
     const started = await session.ready;
-    if (started.error) throw new Error('Played offline — this run could not join the global leaderboard. Your personal best is saved.');
+    if (started.error) throw new Error(started.error.status
+      ? started.error.message
+      : 'Played offline — this run could not join the global leaderboard. Your personal best is saved.');
     const body = { action: 'finish', runId: started.runId, ...result };
     const queue = pending().filter(item => item.body.runId !== body.runId);
     write(QUEUE_KEY, [...queue, { created: Date.now(), body }].slice(-30));

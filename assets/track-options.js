@@ -36,7 +36,7 @@
   function describeFrequencies(value) {
     const options = normalize(value), labels = ["Off", "Rare", "Normal", "Often"];
     const bonuses = ["Growth Orbs", "Fruit", "Bombs"].map((name, i) => `${name}: ${labels[+options.bonuses[i]]}`).join(" · ");
-    const powers = new Set(options.powers).size === 1 ? labels[+options.powers[0]] : ["Star", "Blaster", "Magnet", "Slow Motion", "Double Points", "Energy Cell"].map((name, i) => +options.powers[i] ? `${name} ${labels[+options.powers[i]]}` : "").filter(Boolean).join(", ");
+    const powers = new Set(options.powers).size === 1 ? labels[+options.powers[0]] : ["Star", "Blaster", "Magnet", "Slow Motion", "Double Points", "Energy Cell"].map((name, i) => `${name} ${labels[+options.powers[i]]}`).join(", ");
     return `${bonuses}. Power-ups: ${powers}.`;
   }
   globalThis.ThreadTrackOptions = { defaults, shapeNames, normalize, read, save, fromUrl, describe, describeFrequencies };

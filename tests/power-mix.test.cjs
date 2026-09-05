@@ -128,7 +128,7 @@ test('confirming Star Often saves without launching, then Play This Track uses t
 
 test('daily mix is shared, generated links carry their mix, and malformed mixes use defaults', async () => {
   const daily = game('?mode=daily&track=3&powers=000000');
-  assert.equal(value(daily, 'runMix'), '222222');
+  assert.equal(value(daily, 'runMix'), value(daily, 'dailyTrack.options.powers'));
   assert.equal(value(game('?mode=generated&powers=oops'), 'runMix'), '222222');
   let payload;
   const run = game('?mode=generated&seed=N3ON-4821&powers=301203', { share: async data => { payload = data; } });

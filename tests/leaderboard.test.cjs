@@ -9,10 +9,19 @@ const flushTasks = () => new Promise(resolve => setImmediate(resolve));
 function client(fetcher, storage = new Map()) {
   const context = vm.createContext({ crypto:webcrypto, Uint8Array, AbortController, setTimeout, clearTimeout,
     fetch:fetcher, addEventListener(){}, localStorage: {getItem:k=>storage.get(k),setItem:(k,v)=>storage.set(k,v)} });
+  vm.runInContext(fs.readFileSync(require('node:path').join(__dirname,'../assets/daily-tracks.js'),'utf8'),context);
   vm.runInContext(script,context);
   return { api:context.ThreadLeaderboard, storage };
 }
 const reply = data => ({ok:true,json:async()=>data});
+test('ranked starts identify the daily rules and explain a stale-client rejection',async()=>{
+  const bodies=[];
+  const c=client(async(url,options)=>{bodies.push(JSON.parse(options.body));return reply({runId:'verified'});});
+  await c.api.startRun(2).ready;await c.api.startRun(3).ready;
+  assert.deepEqual(bodies,[{action:'start',track:2,rulesVersion:1},{action:'start',track:3,rulesVersion:2}]);
+  const stale=client(async()=>({ok:false,status:409,json:async()=>({error:'Reload THREAD to play this track with the latest daily settings.'})}));
+  await assert.rejects(stale.api.finishRun(stale.api.startRun(3),{score:100,distance:100,duration:2}),/Reload THREAD/);
+});
 test('guest credential persists and pending scores retry once after reconnect', async () => {
   let connected = true, finishes = 0, firstToken;
   const storage = new Map();

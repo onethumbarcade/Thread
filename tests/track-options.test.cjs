@@ -130,8 +130,8 @@ test('turning all collectibles off does not suppress powers; changing their rate
 test('daily rules ignore custom shapes and collectibles, and malformed shared settings use defaults', () => {
   const a=game('?mode=daily&track=3'), b=game('?mode=daily&track=3&shapes=0&bonuses=000&powers=000000',{},844,{storage:{'thread-track-options':JSON.stringify({shapes:'0',bonuses:'333',powers:'333333'})}});
   for(const field of ['shapeSequence','pickups','bonuses','nodes']) assert.deepEqual(json(a,'game.'+field),json(b,'game.'+field));
-  assert.deepEqual(json(b,'game.shapeSequence'),[3]);
-  assert.equal(value(b,'runMix'),'222222');
+  assert.deepEqual(json(b,'game.shapeSequence'),json(b,'dailyTrack.shapes'));
+  assert.equal(value(b,'runMix'),value(b,'dailyTrack.options.powers'));
   assert.equal(value(b,'ThreadTrackOptions.describeFrequencies()'),'Growth Orbs: Normal · Fruit: Normal · Bombs: Normal. Power-ups: Normal.');
   assert.match(value(b,'ThreadTrackOptions.describeFrequencies(ThreadTrackOptions.read())'),/Growth Orbs: Often/);
   for(const shapes of ['', '4', '012301230', '<script>']) {

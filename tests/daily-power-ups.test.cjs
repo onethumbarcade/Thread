@@ -5,9 +5,9 @@ const { game, gameScript } = require('./game-harness.cjs');
 const value = (run, expression) => vm.runInContext(expression, run.context);
 const json = (run, expression) => JSON.parse(value(run, `JSON.stringify(${expression})`));
 
-test('daily rules agree with the game and include fixed triangles and varied rotations', () => {
+test('daily rules agree with gameplay shapes and level thresholds', () => {
   const starts = new Set(), rotations = new Set();
-  for (let day = 1; day <= 8; day++) {
+  for (let day = 1; day <= 16; day++) {
     const run = game(`?mode=daily&track=${day}`);
     const rules = json(run, 'ThreadDaily.getTrack(runTrack)');
     assert.equal(value(run, 'game.shapeOffset'), rules.startingShape);
@@ -19,11 +19,11 @@ test('daily rules agree with the game and include fixed triangles and varied rot
     const renderedShape = run.context.shape;
     run.context.shape = (...args) => { shapes.push(args[3]); renderedShape(...args); };
     for (let level = 1; level <= 10; level++) {
-      value(run, `game.score=${(level - 1) * 20000};game.energy=100;game.ringOffset=0;`);
+      value(run, `game.score=${(level - 1) * (rules.levelScore || 20000)};game.energy=100;game.ringOffset=0;`);
       run.step();
       assert.equal(shapes.at(-1), rules.shapes[(level - 1) % rules.shapes.length]);
     }
-    if (day === 3) assert(shapes.every(shape => shape === 3), 'all triangle levels');
+    if (rules.shapes.length === 1) assert(shapes.every(shape => shape === rules.shapes[0]), 'static shape at every level');
   }
   assert.equal(starts.size, 4);
   assert(rotations.size >= 6);
