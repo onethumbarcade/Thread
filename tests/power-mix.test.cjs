@@ -36,7 +36,7 @@ test('frequency controls support all six kinds, including off, with repeatable p
 
 test('pickups remain spaced at high speeds and independent of extension batches', () => {
   const run = game('?mode=generated');
-  for (const mix of ['111111', '222222', '333333']) {
+  for (const mix of ['111111', '222222', '333333', '300000']) {
     value(run, `{
       const bonuses=Array.from({length:600},(_,i)=>({kind:i%3===0?'bomb':'cherry',y:400+i*350}));
       const full=ThreadPowerUps.create(seededRandom(9876),'${mix}');
@@ -57,6 +57,61 @@ test('pickups remain spaced at high speeds and independent of extension batches'
       previous = seconds;
     }
   }
+});
+
+test('a single regular power set to Often appears early and keeps returning across seeds', () => {
+  const run = game('?mode=generated');
+  for (const kind of [0, 2, 3, 4, 5]) {
+    const rates = [...'000000']; rates[kind] = '3';
+    for (let seed = 0; seed < 50; seed++) {
+      value(run, `{
+        const state=ThreadPowerUps.create(seededRandom(${seed}),'${rates.join('')}');
+        const bonuses=Array.from({length:500},(_,i)=>({kind:i%3===0?'bomb':'cherry',y:400+i*350}));
+        ThreadPowerUps.extend(state,bonuses);
+        globalThis.oftenItems=state.items;
+      }`);
+      const items = json(run, 'oftenItems');
+      const times = items.map(item => 105 * Math.log1p(item.y / 5670));
+      assert(times.length > 10);
+      assert(times[0] >= 12 && times[0] <= 16, 'first pickup arrives in the opening 12–16 course seconds');
+      assert(items.every(item => item.kind === run.context.ThreadPowerUps.kinds[kind]));
+      for (let i = 1; i < times.length; i++) {
+        const gap = times[i] - times[i - 1];
+        assert(gap >= 12 - .00001 && gap <= 18 + .00001, 'Often has no empty pickup slots');
+      }
+    }
+  }
+});
+
+test('Star Often selected in the mixer launches a run with visible stars and no other powers', () => {
+  const menu = game('?mode=generated&seed=CM6A-7118');
+  const inputs = menu.context.ThreadPowerUps.kinds.map(kind => {
+    const input = menu.get('mix-' + kind); input.dataset.powerRate = kind; return input;
+  });
+  menu.context.document.querySelectorAll = selector => selector === '[data-power-rate]' ? inputs : [];
+  vm.runInContext(read('assets/power-up-menu.js'), menu.context);
+  inputs.forEach((input, i) => { input.value = i === 0 ? '3' : '0'; input.oninput(); });
+  menu.get('#play-power-mix').onclick();
+  const url = new URL(menu.context.location.href);
+  assert.equal(url.searchParams.get('powers'), '300000');
+  const run = game(url.search);
+  assert.equal(value(run, 'runMix'), '300000');
+  run.step();
+  const first = json(run, 'game.powerUps.items[0]');
+  assert.equal(first.kind, 'star');
+  // Advance a live game frame to when that first star enters the visible course.
+  value(run, `game.distance=${first.y}-200;game.ringOffset=Math.min(width*.4,190)*Math.sin(angle(game.nodes,game.distance));`);
+  run.step();
+  assert.equal(value(run, 'game.running'), true);
+  assert(json(run, 'game.powerUps.items').every(item => item.kind === 'star'));
+  assert.equal(value(run, 'game.powerUps.items[0].resolved'), undefined);
+  assert(value(run, 'game.powerUps.items[0].y-game.distance') > 0);
+  assert(value(run, 'game.powerUps.items[0].y-game.distance') < 200);
+  const initial = json(run, 'game.powerUps.items');
+  const friend = game(url.search); friend.step();
+  assert.deepEqual(json(friend, 'game.powerUps.items'), initial);
+  run.get('#again').onclick(); run.step();
+  assert.deepEqual(json(run, 'game.powerUps.items'), initial);
 });
 
 test('daily mix is shared, generated links carry their mix, and malformed mixes use defaults', async () => {

@@ -128,7 +128,8 @@
         background: linear-gradient(90deg, #ff4068, #ffe05b 40%, #41f7d0);
         box-shadow: 0 0 12px #41f7d0;
       }
-      .power-status { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 8px; }
+      /* Countdown badges overlay the course without resizing its HUD boundary. */
+      .power-status { position: absolute; top: calc(100% - 8px); left: 14px; right: 14px; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
       .power-status span { padding: 4px 9px; border: 1px solid currentColor; border-radius: 999px; background: #070b17ed; color: #ffe66e; font-size: 11px; font-weight: 900; }
       .power-status #blaster-timer { color: #72f6ff; }
       .power-status #magnet-timer { color: #ff87df; }

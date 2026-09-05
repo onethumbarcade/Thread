@@ -8,6 +8,9 @@
   const courseTime = y => 105 * Math.log1p(y / 5670);
   const courseDistance = seconds => 5670 * Math.expm1(seconds / 105);
   const minimumGap = 8;
+  // Often fills every regular pickup opportunity when it is the only enabled
+  // kind. Keep Rare/Normal weights unchanged, including the default daily mix.
+  const weights = [0, .08, .16, 1];
   function normalizeMix(value) { return /^[0-3]{6}$/.test(String(value)) ? String(value) : defaultMix; }
   function readMix() { try { return normalizeMix(localStorage.getItem("thread-power-mix")); } catch { return defaultMix; } }
   function saveMix(value) { try { localStorage.setItem("thread-power-mix", normalizeMix(value)); return true; } catch { return false; } }
@@ -35,7 +38,7 @@
       pending.push(pickup(y, "blaster", state.blasterRandom));
     }
     const candidates = kinds.filter(kind => kind !== "blaster");
-    const total = candidates.reduce((sum, kind) => sum + state.rates[kind] * .08, 0);
+    const total = candidates.reduce((sum, kind) => sum + weights[state.rates[kind]], 0);
     // All bomb-linked candidates up to this point are known. Merge both streams
     // in course order before spacing them, independent of viewport/extension size.
     while (state.nextY < (bonuses.at(-1)?.y || 0) - 260) {
@@ -43,7 +46,7 @@
       state.nextY = courseDistance(courseTime(y) + 12 + state.random() * 6);
       let roll = state.random() * Math.max(1, total), kind;
       for (const candidate of candidates) {
-        roll -= state.rates[candidate] * .08;
+        roll -= weights[state.rates[candidate]];
         if (roll < 0) { kind = candidate; break; }
       }
       if (kind) pending.push(pickup(y, kind, state.random));
