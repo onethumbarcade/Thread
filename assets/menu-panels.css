@@ -73,6 +73,18 @@
 .thread-menu-card .option-actions .action { margin-top: 0; }
 .thread-menu-card .option-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 12px; }
 .thread-menu-card .mix-intro { color: #b9c9df; font-size: 14px; line-height: 1.5; margin: 0 0 18px; }
+.thread-menu-card .track-section-title { color: #76f3ff; font-size: 14px; letter-spacing: 2px; margin: 28px 0 12px; }
+.thread-menu-card .shape-label { display: block; font-weight: 800; margin: 16px 0 8px; }
+.thread-menu-card .shape-select { width: 100%; min-width: 0; min-height: 46px; padding: 9px 12px; border: 1px solid #4ae5f580; border-radius: 12px; background: #0b1429; color: #f1fbff; font: 700 15px Inter,system-ui,sans-serif; color-scheme: dark; }
+.thread-menu-card .shape-step { display: grid; grid-template-columns: 38px minmax(0,1fr) 44px; align-items: center; gap: 8px; margin-top: 10px; }
+.thread-menu-card .shape-step[hidden], #shape-sequence[hidden] { display: none; }
+.thread-menu-card .shape-step label { color: #a6bcd9; font-size: 13px; }
+.thread-menu-card .shape-remove, .thread-menu-card .shape-add { min-height: 44px; border: 1px solid #bb9aff; border-radius: 12px; background: #201a3d; color: #e6d5ff; font: 800 15px Inter,system-ui,sans-serif; cursor: pointer; }
+.thread-menu-card .shape-remove { font-size: 24px; }
+.thread-menu-card .shape-add { width: 100%; margin-top: 12px; }
+#powerups .guide-title { max-width: calc(100% - 94px); padding: 10px 14px; font-size: clamp(12px,3.5vw,16px); letter-spacing: 1px; }
+.thread-menu-card button:disabled, #generate button:disabled { opacity: .45; cursor: default; }
+#generated-rules { margin: 20px 0 12px; padding: 12px; color: #c7d9ed; font-size: 13px; line-height: 1.5; border: 1px solid #4ae5f547; border-radius: 14px; }
 .thread-menu-card .power-mix-row { padding: 12px 0 14px; border-bottom: 1px solid #ffffff18; }
 .thread-menu-card .power-mix-row label { display: flex; justify-content: space-between; gap: 8px; font-size: 16px; font-weight: 850; }
 .thread-menu-card .power-mix-row output { color: #76f3ff; font-size: 13px; }

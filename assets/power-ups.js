@@ -2,61 +2,49 @@
 (() => {
   const kinds = ["star", "blaster", "magnet", "slow", "double", "energy"];
   const durations = { star: 7, blaster: 12, magnet: 10, slow: 6, double: 10 };
-  const defaultMix = "111111";
+  const defaultMix = "222222";
   // Base course speed is 54 + distance / 105. Space pickups by travel time so
   // later, faster levels don't turn rare rewards into a constant stream.
   const courseTime = y => 105 * Math.log1p(y / 5670);
   const courseDistance = seconds => 5670 * Math.expm1(seconds / 105);
-  const minimumGap = 8;
-  // Often fills every regular pickup opportunity when it is the only enabled
-  // kind. Keep Rare/Normal weights unchanged, including the default daily mix.
-  const weights = [0, .08, .16, 1];
+  // One shared, bounded cadence prevents enabling more kinds from flooding the
+  // course. The highest setting determines spacing; rates weight the selection.
+  // Seconds refer to normal course travel, so slow motion stretches the gaps.
+  const cadence = [null,
+    { first: [24, 32], gap: [40, 60] },
+    { first: [16, 22], gap: [25, 40] },
+    { first: [12, 16], gap: [12, 18] },
+  ];
   function normalizeMix(value) { return /^[0-3]{6}$/.test(String(value)) ? String(value) : defaultMix; }
-  function readMix() { try { return normalizeMix(localStorage.getItem("thread-power-mix")); } catch { return defaultMix; } }
-  function saveMix(value) { try { localStorage.setItem("thread-power-mix", normalizeMix(value)); return true; } catch { return false; } }
+  function readMix() { if (globalThis.ThreadTrackOptions) return ThreadTrackOptions.read().powers; try { return normalizeMix(localStorage.getItem("thread-power-mix")); } catch { return defaultMix; } }
+  function saveMix(value) { if (globalThis.ThreadTrackOptions) return ThreadTrackOptions.save({ ...ThreadTrackOptions.read(), powers: normalizeMix(value) }); try { localStorage.setItem("thread-power-mix", normalizeMix(value)); return true; } catch { return false; } }
   function pickup(y, kind, random) {
     return { y, kind, side: random() < .5 ? -1 : 1, offset: 92 + random() * 18, collected: false };
   }
   function create(random, mix = defaultMix) {
     const rates = Object.fromEntries(kinds.map((kind, i) => [kind, Number(normalizeMix(mix)[i])]));
-    let seed = (random() * 4294967296) >>> 0;
-    const blasterRandom = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+    const timing = cadence[Math.max(...Object.values(rates))];
+    const between = range => range[0] + random() * (range[1] - range[0]);
     return {
-      random, blasterRandom, rates, items: [], nextY: courseDistance(12 + random() * 4),
-      scanned: 0, lastPickupTime: -Infinity, star: 0, blaster: 0, magnet: 0, slow: 0, double: 0, cooldown: 0, shots: [],
+      random, rates, timing, between, items: [], nextY: timing ? courseDistance(between(timing.first)) : Infinity,
+      star: 0, blaster: 0, magnet: 0, slow: 0, double: 0, cooldown: 0, shots: [],
     };
   }
-  function extend(state, bonuses) {
-    const pending = [];
-    // A separate stream keeps bomb-linked blasters independent of generation cadence.
-    for (; state.scanned < bonuses.length; state.scanned++) {
-      const bomb = bonuses[state.scanned];
-      const y = bomb.y - 260;
-      if (bomb.kind !== "bomb" || courseTime(y) < 12) continue;
-      const pace = 1 + y / 5670;
-      if (state.blasterRandom() >= state.rates.blaster / (3 * pace)) continue;
-      pending.push(pickup(y, "blaster", state.blasterRandom));
-    }
-    const candidates = kinds.filter(kind => kind !== "blaster");
-    const total = candidates.reduce((sum, kind) => sum + weights[state.rates[kind]], 0);
-    // All bomb-linked candidates up to this point are known. Merge both streams
-    // in course order before spacing them, independent of viewport/extension size.
-    while (state.nextY < (bonuses.at(-1)?.y || 0) - 260) {
+  function extend(state, horizon) {
+    if (!state.timing) return;
+    const candidates = kinds.filter(kind => state.rates[kind] > 0);
+    const total = candidates.reduce((sum, kind) => sum + state.rates[kind], 0);
+    // Extend in course order, independent of viewport and generation batch size.
+    const until = typeof horizon === "number" ? horizon : (horizon.at(-1)?.y || 0) - 260;
+    while (state.nextY < until) {
       const y = state.nextY;
-      state.nextY = courseDistance(courseTime(y) + 12 + state.random() * 6);
-      let roll = state.random() * Math.max(1, total), kind;
+      state.nextY = courseDistance(courseTime(y) + state.between(state.timing.gap));
+      let roll = state.random() * total, kind = candidates.at(-1);
       for (const candidate of candidates) {
-        roll -= weights[state.rates[candidate]];
+        roll -= state.rates[candidate];
         if (roll < 0) { kind = candidate; break; }
       }
-      if (kind) pending.push(pickup(y, kind, state.random));
-    }
-    pending.sort((a, b) => a.y - b.y);
-    for (const item of pending) {
-      const time = courseTime(item.y);
-      if (time - state.lastPickupTime < minimumGap) continue;
-      state.items.push(item);
-      state.lastPickupTime = time;
+      state.items.push(pickup(y, kind, state.random));
     }
   }
   function position(item, trackX, centerX, range) {

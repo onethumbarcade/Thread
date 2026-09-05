@@ -8,7 +8,7 @@
     <div class="settings"><div><span>Haptics</span><small>Touch feedback on supported devices</small></div><button class="switch on" data-setting="haptics" aria-label="Toggle haptics"></button></div>
     <div class="settings"><div><span>Reduced Motion</span><small>Minimizes pulsing and moving stars</small></div><button class="switch" data-setting="reduced" aria-label="Toggle reduced motion"></button></div>
     <div class="option-actions">
-      <div class="option-links"><button class="scoring-link" data-go="scoring"><span aria-hidden="true">ⓘ</span> Scoring Guide</button><button class="scoring-link" data-go="powerups">Power-up Mix</button></div>
+      <div class="option-links"><button class="scoring-link" data-go="scoring"><span aria-hidden="true">ⓘ</span> Scoring Guide</button></div>
       <button class="action" data-go="home">DONE</button>
     </div>
   `,
@@ -37,8 +37,25 @@
     <p class="note">Maximum scores come from precise centering, surviving higher speed multipliers and taking calculated risks for collectibles.</p>
   `,
     powerups: `
-    <div class="guide-head"><button class="back" data-go="options" aria-label="Back to options">‹</button><div class="guide-title">POWER-UP MIX</div></div>
-    <p class="mix-intro">Choose how often each power-up appears in generated tracks. Daily tracks use the same mix for everyone.</p>
+    <div class="guide-head"><button class="back" data-go="generate" aria-label="Back to Generate Track">‹</button><div class="guide-title">TRACK OPTIONS</div></div>
+    <p class="mix-intro">Build your own challenge. Choose the shapes and item frequencies, then generate a track to play or share.</p>
+    <h3 class="track-section-title">SHAPES</h3>
+    <label class="shape-label" for="starting-shape">Starting Shape</label>
+    <select class="shape-select" id="starting-shape">${["Square", "Circle", "Diamond", "Triangle"].map((name,i)=>`<option value="${i}">${name}</option>`).join("")}</select>
+    <label class="shape-label" for="shape-mode">Shape Changes</label>
+    <select class="shape-select" id="shape-mode"><option value="cycle">Change each level</option><option value="fixed">Keep the starting shape</option></select>
+    <div id="shape-sequence">
+      ${Array.from({length:7},(_,i)=>`<div class="shape-step" data-shape-step="${i}"><label for="next-shape-${i}">Then</label><select class="shape-select" id="next-shape-${i}" data-next-shape="${i}">${["Square", "Circle", "Diamond", "Triangle"].map((name,n)=>`<option value="${n}">${name}</option>`).join("")}</select><button class="shape-remove" data-remove-shape="${i}" aria-label="Remove shape ${i+2}">×</button></div>`).join("")}
+      <button class="shape-add" id="add-shape">+ Add Shape</button>
+    </div>
+    <p class="mix-note" id="shape-summary"></p>
+    <h3 class="track-section-title">FRUIT & BONUSES</h3>
+    ${[
+      ["orb", "◎ Growth Orbs", "Increase the tracker size"],
+      ["fruit", "🍒 Fruit & Treats", "Cherries, strawberries, bananas and cake"],
+      ["bomb", "💣 Bombs", "Off-track hazards for an extra challenge"],
+    ].map(([kind,label,description])=>`<div class="power-mix-row"><label for="bonus-${kind}">${label}<output id="bonus-${kind}-value" for="bonus-${kind}">Normal</output></label><small>${description}</small><input id="bonus-${kind}" data-bonus-rate="${kind}" type="range" min="0" max="3" step="1" value="2" aria-valuetext="Normal"><div class="mix-scale" aria-hidden="true"><span>Off</span><span>Rare</span><span>Normal</span><span>Often</span></div></div>`).join("")}
+    <h3 class="track-section-title">POWER-UPS</h3>
     ${[
       ["star", "★ Star", "7 seconds of rainbow invincibility"],
       ["blaster", "⚡ Blaster", "12 seconds of automatic bomb blasting"],
@@ -46,11 +63,11 @@
       ["slow", "◷ Slow Motion", "6 seconds at 60% course speed"],
       ["double", "2× Double Points", "10 seconds of double scoring"],
       ["energy", "+ Energy Cell", "Instantly restores health to 100%"],
-    ].map(([kind, label, description]) => `<div class="power-mix-row"><label for="mix-${kind}">${label}<output id="mix-${kind}-value" for="mix-${kind}">Rare</output></label><small>${description}</small><input id="mix-${kind}" data-power-rate="${kind}" type="range" min="0" max="3" step="1" value="1" aria-valuetext="Rare"><div class="mix-scale" aria-hidden="true"><span>Off</span><span>Rare</span><span>Normal</span><span>Often</span></div></div>`).join("")}
-    <p class="mix-note" id="power-mix-status" role="status">Saves automatically for your next generated run. Shared links include the mix; a code uses your chosen mix.</p>
+    ].map(([kind, label, description]) => `<div class="power-mix-row"><label for="mix-${kind}">${label}<output id="mix-${kind}-value" for="mix-${kind}">Normal</output></label><small>${description}</small><input id="mix-${kind}" data-power-rate="${kind}" type="range" min="0" max="3" step="1" value="2" aria-valuetext="Normal"><div class="mix-scale" aria-hidden="true"><span>Off</span><span>Rare</span><span>Normal</span><span>Often</span></div></div>`).join("")}
+    <p class="mix-note" id="power-mix-status" role="status">Confirm saves this setup. Shared links include every setting; a track code uses your saved setup.</p>
     <div class="mix-actions">
       <button class="mix-reset" id="reset-power-mix">Reset to Default</button>
-      <button class="action" id="play-power-mix">PLAY WITH THIS MIX</button>
+      <button class="action" id="confirm-power-mix">CONFIRM</button>
     </div>
   `,
   };

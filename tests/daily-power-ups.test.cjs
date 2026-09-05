@@ -43,7 +43,6 @@ test('power placement stays seeded across retries, heights, and extension cadenc
   assert.deepEqual(a.slice(0, count), b.slice(0, count));
   for (const item of a) {
     assert(item.offset >= 92 && item.offset <= 110);
-    if (item.kind === 'blaster') assert(value(short, `game.bonuses.some(b=>b.kind==='bomb'&&Math.abs(b.y-${item.y}-260)<.00001)`));
   }
   short.get('#again').onclick();
   short.step();

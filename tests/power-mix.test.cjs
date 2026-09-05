@@ -3,10 +3,19 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const { game, element } = require('./game-harness.cjs');
+const { game } = require('./game-harness.cjs');
 const read = file => fs.readFileSync(path.join(__dirname, '..', file), 'utf8');
 const value = (run, code) => vm.runInContext(code, run.context);
 const json = (run, code) => JSON.parse(value(run, `JSON.stringify(${code})`));
+function mixer(run) {
+  const inputs = run.context.ThreadPowerUps.kinds.map(kind => {
+    const input = run.get('mix-' + kind); input.dataset.powerRate = kind; return input;
+  });
+  run.context.document.querySelectorAll = selector => selector === '[data-power-rate]' ? inputs : [];
+  run.get('#powerups [data-go="generate"]').onclick = () => { run.returnedToGenerate = (run.returnedToGenerate || 0) + 1; };
+  vm.runInContext(read('assets/power-up-menu.js'), run.context);
+  return inputs;
+}
 
 test('frequency controls support all six kinds, including off, with repeatable placement', () => {
   function generate(mix, seed = 'N3ON-4821') {
@@ -59,9 +68,9 @@ test('pickups remain spaced at high speeds and independent of extension batches'
   }
 });
 
-test('a single regular power set to Often appears early and keeps returning across seeds', () => {
+test('each of the six powers set to Often appears early and keeps returning across seeds', () => {
   const run = game('?mode=generated');
-  for (const kind of [0, 2, 3, 4, 5]) {
+  for (const kind of [0, 1, 2, 3, 4, 5]) {
     const rates = [...'000000']; rates[kind] = '3';
     for (let seed = 0; seed < 50; seed++) {
       value(run, `{
@@ -83,20 +92,24 @@ test('a single regular power set to Often appears early and keeps returning acro
   }
 });
 
-test('Star Often selected in the mixer launches a run with visible stars and no other powers', () => {
+test('confirming Star Often saves without launching, then Play This Track uses that mix', () => {
   const menu = game('?mode=generated&seed=CM6A-7118');
-  const inputs = menu.context.ThreadPowerUps.kinds.map(kind => {
-    const input = menu.get('mix-' + kind); input.dataset.powerRate = kind; return input;
-  });
-  menu.context.document.querySelectorAll = selector => selector === '[data-power-rate]' ? inputs : [];
-  vm.runInContext(read('assets/power-up-menu.js'), menu.context);
+  const inputs = mixer(menu), before = menu.context.location.href;
+  vm.runInContext(read('assets/generated-track-menu.js'), menu.context);
+  menu.get('#seed').textContent = 'CM6A-7118';
   inputs.forEach((input, i) => { input.value = i === 0 ? '3' : '0'; input.oninput(); });
-  menu.get('#play-power-mix').onclick();
+  menu.get('#confirm-power-mix').onclick();
+  assert.equal(menu.context.location.href, before);
+  assert.equal(menu.returnedToGenerate, 1);
+  assert.equal(menu.get('#play-generated').disabled, true);
+  menu.get('#new-seed').onclick();
+  menu.get('#play-generated').onclick();
   const url = new URL(menu.context.location.href);
   assert.equal(url.searchParams.get('powers'), '300000');
   const run = game(url.search);
   assert.equal(value(run, 'runMix'), '300000');
   run.step();
+  const initial = json(run, 'game.powerUps.items');
   const first = json(run, 'game.powerUps.items[0]');
   assert.equal(first.kind, 'star');
   // Advance a live game frame to when that first star enters the visible course.
@@ -107,7 +120,6 @@ test('Star Often selected in the mixer launches a run with visible stars and no 
   assert.equal(value(run, 'game.powerUps.items[0].resolved'), undefined);
   assert(value(run, 'game.powerUps.items[0].y-game.distance') > 0);
   assert(value(run, 'game.powerUps.items[0].y-game.distance') < 200);
-  const initial = json(run, 'game.powerUps.items');
   const friend = game(url.search); friend.step();
   assert.deepEqual(json(friend, 'game.powerUps.items'), initial);
   run.get('#again').onclick(); run.step();
@@ -116,8 +128,8 @@ test('Star Often selected in the mixer launches a run with visible stars and no 
 
 test('daily mix is shared, generated links carry their mix, and malformed mixes use defaults', async () => {
   const daily = game('?mode=daily&track=3&powers=000000');
-  assert.equal(value(daily, 'runMix'), '111111');
-  assert.equal(value(game('?mode=generated&powers=oops'), 'runMix'), '111111');
+  assert.equal(value(daily, 'runMix'), '222222');
+  assert.equal(value(game('?mode=generated&powers=oops'), 'runMix'), '222222');
   let payload;
   const run = game('?mode=generated&seed=N3ON-4821&powers=301203', { share: async data => { payload = data; } });
   run.step();
@@ -192,25 +204,65 @@ test('energy cells restore full health from any level and have no countdown', ()
   }
 });
 
-test('mix menu saves accessible slider values, resets defaults, and plays the chosen mix', () => {
+test('mix menu confirms accessible settings, resets all to Normal, and reports failed saves', () => {
   const run = game('?mode=generated&seed=N3ON-4821');
-  const inputs = run.context.ThreadPowerUps.kinds.map(kind => {
-    const input = run.get('mix-' + kind); input.dataset.powerRate = kind; return input;
-  });
-  run.context.document.querySelectorAll = selector => selector === '[data-power-rate]' ? inputs : [];
-  vm.runInContext(read('assets/power-up-menu.js'), run.context);
+  const inputs = mixer(run), href = run.context.location.href;
+  assert(inputs.every(input => input.value === '2' && input['aria-valuetext'] === 'Normal'));
   inputs[2].value='3'; inputs[2].oninput();
-  assert.equal(run.storage.get('thread-power-mix'), '113111');
+  assert.equal(run.storage.get('thread-power-mix'), undefined);
+  assert.equal(run.context.ThreadPowerUpMenu.getMix(), '222222');
   assert.equal(inputs[2]['aria-valuetext'], 'Often');
-  run.get('#play-power-mix').onclick();
-  assert.equal(new URL(run.context.location.href).searchParams.get('powers'), '113111');
-  assert.equal(new URL(run.context.location.href).searchParams.get('seed'), 'N3ON-4821');
+  run.get('#confirm-power-mix').onclick();
+  assert.equal(JSON.parse(run.storage.get('thread-track-options')).powers, '223222');
+  assert.equal(run.context.ThreadPowerUpMenu.getMix(), '223222');
+  assert.equal(run.context.location.href, href);
+  assert.equal(run.returnedToGenerate, 1);
   run.get('#reset-power-mix').onclick();
-  assert.equal(run.storage.get('thread-power-mix'), '111111');
-  assert(inputs.every(input => input.value === '1'));
+  assert(inputs.every(input => input.value === '2' && input['aria-valuetext'] === 'Normal'));
+  run.get('#confirm-power-mix').onclick();
+  assert.equal(JSON.parse(run.storage.get('thread-track-options')).powers, '222222');
+  assert.equal(run.returnedToGenerate, 2);
   run.context.localStorage.setItem = () => { throw Error('Storage denied'); };
   inputs[0].value='0'; inputs[0].oninput();
+  run.get('#confirm-power-mix').onclick();
   assert(run.get('#power-mix-status').textContent.includes('could not save'));
-  run.get('#play-power-mix').onclick();
-  assert.equal(new URL(run.context.location.href).searchParams.get('powers'), '011111');
+  assert.equal(run.returnedToGenerate, 2);
+  assert.equal(run.context.ThreadPowerUpMenu.getMix(), '222222');
+  assert.equal(run.context.location.href, href);
+});
+
+test('saved mixes apply to generated links without powers, and explicit shared mixes take priority', () => {
+  const options = { storage: { 'thread-power-mix': '300000' } };
+  for (const [query, expected] of [
+    ['?mode=generated&seed=ABCD-1234', '300000'],
+    ['?mode=generated&seed=ABCD-1234&powers=030000', '030000'],
+    ['?mode=daily&track=2', '222222'],
+    ['?mode=daily&track=2&powers=300000', '222222'],
+  ]) {
+    const run = game(query, {}, 844, options);
+    assert.equal(value(run, 'runMix'), expected);
+    assert.deepEqual(json(run, 'game.powerUps.rates'), Object.fromEntries(run.context.ThreadPowerUps.kinds.map((kind, i) => [kind, +expected[i]])));
+  }
+});
+
+test('changing saved preferences elsewhere does not alter the played track, score share, or retry', async () => {
+  let payload;
+  const run = game('?mode=generated&seed=ABCD-1234&powers=030000', { share: async data => { payload = data; } });
+  value(run, 'game.running=false;game.score=51106;');
+  const before = json(run, '{score:game.score,distance:game.distance,running:game.running,rates:game.powerUps.rates}');
+  run.context.ThreadTrackOptions.save({ powers: '300000', shapes: '3', bonuses: '000' });
+  assert.deepEqual(json(run, '{score:game.score,distance:game.distance,running:game.running,rates:game.powerUps.rates}'), before);
+  assert.equal(value(run, 'runMix'), '030000');
+  await run.get('#share-score').onclick();
+  assert.equal(new URL(payload.url).searchParams.get('powers'), '030000');
+  run.get('#again').onclick();
+  assert.equal(value(run, 'runMix'), '030000');
+  run.step();
+  assert(json(run, 'game.powerUps.items').every(item => item.kind === 'blaster'));
+  await run.get('#share-score').onclick();
+  assert.equal(new URL(payload.url).searchParams.get('powers'), '030000');
+  const daily = game('?mode=daily&track=2');
+  daily.context.ThreadTrackOptions.save({ powers: '000000', shapes: '3', bonuses: '000' });
+  daily.get('#again').onclick();
+  assert.equal(value(daily, 'runMix'), '222222');
 });

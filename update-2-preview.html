@@ -31,7 +31,7 @@
     .settings-button{position:absolute;top:14px;right:14px;width:46px;height:46px;padding:0;border:1px solid #eaffff;border-radius:50%;background:linear-gradient(110deg,#32efff 0%,#7af7df 48%,#ff55d7 100%);box-shadow:0 5px 0 #08768b,0 0 18px #2ce8ff66;color:#05060b;font-size:23px;font-weight:900;z-index:2}
     .guide-head{position:relative;display:flex;align-items:center;justify-content:center;min-height:48px;margin-bottom:18px}.guide-head .back{position:absolute;left:0;top:2px}.guide-title{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 24px;border:1px solid #ff8ae8;border-radius:999px;background:#e934b8;color:#fff;font-size:16px;font-weight:1000;letter-spacing:2px;box-shadow:0 0 18px #ff48ce77,inset 0 1px #fff7;text-align:center}
   </style>
-  <link rel="stylesheet" href="assets/menu-panels.css">
+  <link rel="stylesheet" href="assets/menu-panels.css?v=track-options-1">
 </head>
 <body>
   <div class="stars"></div>
@@ -57,7 +57,11 @@
     <section class="card view" id="generate">
       <div class="guide-head"><button class="back" data-go="home">‹</button><div class="guide-title">GENERATE TRACK</div></div>
       <div class="hero" style="--neon:#ff55d6"><div class="date">FREE PLAY</div><h3>NEW TRACK CREATION</h3><p>Unranked practice without affecting the daily leaderboard.</p></div>
+      <button class="action secondary" data-go="powerups" id="customize-track">CUSTOMIZE TRACK</button>
+      <p id="generated-rules"></p>
+      <button class="action" id="new-seed">GENERATE NEW TRACK</button>
       <div class="seed"><small>TRACK CODE</small><b id="seed">N3ON-4821</b><small>Share this track or enter a friend’s code to play their course.</small></div>
+      <button class="action secondary" id="play-generated">PLAY THIS TRACK</button>
       <div class="track-tools">
         <button class="action secondary" id="share-track">SHARE TRACK</button>
         <button class="action secondary" id="enter-track-code" aria-expanded="false" aria-controls="track-code-form">ENTER TRACK CODE</button>
@@ -70,7 +74,6 @@
       </form>
       <div id="track-share-manual" class="track-share-manual" hidden><label for="track-share-link">Track link</label><input id="track-share-link" type="text" readonly></div>
       <p id="track-status" class="track-status" role="status" aria-live="polite"></p>
-      <button class="action" id="new-seed">GENERATE NEW TRACK</button><button class="action secondary" id="play-generated">PLAY THIS TRACK</button>
     </section>
     <section class="card view" id="archive">
       <div class="guide-head"><button class="back" data-go="home">‹</button><div class="guide-title">TRACK ARCHIVE</div></div>
@@ -89,11 +92,12 @@
   </div></main>
   <div class="ad">DISPLAY AD AREA</div>
   <audio id="menu-music" loop preload="auto" src="assets/thread-menu.mp3"></audio>
-  <script src="assets/menu-panels.js"></script>
-  <script src="assets/track-sharing.js"></script>
+  <script src="assets/menu-panels.js?v=track-options-1"></script>
+  <script src="assets/track-sharing.js?v=track-options-1"></script>
   <script src="assets/daily-tracks.js"></script>
-  <script src="assets/power-ups.js"></script>
-  <script src="assets/power-up-menu.js"></script>
+  <script src="assets/power-ups.js?v=track-options-1"></script>
+  <script src="assets/track-options.js"></script>
+  <script src="assets/power-up-menu.js?v=track-options-1"></script>
   <script>
     const launch=new Date('2026-09-04T00:00:00'),now=new Date(),day=Math.max(1,Math.floor((new Date(now.getFullYear(),now.getMonth(),now.getDate())-launch)/86400000)+1),fmt=new Intl.DateTimeFormat(undefined,{weekday:'long',month:'long',day:'numeric'});
     const dailyTrack=ThreadDaily.getTrack(day),dailyShape=dailyTrack.startingShapeName,dailyBest=Number(localStorage.getItem(`thread-daily-${day}`)||0),attempts=Number(localStorage.getItem(`thread-daily-attempts-${day}`)||0);
@@ -105,6 +109,6 @@
     const list=document.querySelector('#archive-list');for(let i=0;i<24;i++){const d=new Date(now);d.setDate(d.getDate()-i);const n=day-i;if(n<1)break;const saved=localStorage.getItem('thread-daily-'+n);const row=document.createElement('div');row.className='row'+(i===0?' today':'');row.innerHTML=`<div><strong>#${n}</strong><small>${i===0?'TODAY':new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric'}).format(d)}</small></div><div>${saved?`<span class="best">${Number(saved).toLocaleString()}</span><small>PERSONAL BEST</small>`:`<small>${ThreadDaily.getTrack(n).archiveLabel}</small>`}</div><button>${saved?'REPLAY':'PLAY'}</button>`;row.querySelector('button').onclick=()=>playDaily(n);list.appendChild(row)}
     document.querySelector('#play-daily').onclick=()=>playDaily(day);
   </script>
-  <script src="assets/generated-track-menu.js"></script>
+  <script src="assets/generated-track-menu.js?v=track-options-1"></script>
 </body>
 </html>

@@ -14,11 +14,15 @@
     return `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
   }
 
-  function trackUrl(mode, value, base = location.href, mix) {
+  function trackUrl(mode, value, base = location.href, mix, options) {
     const url = new URL("index.html", base);
     url.searchParams.set("mode", mode);
     url.searchParams.set(mode === "daily" ? "track" : "seed", String(value));
     if (mode !== "daily" && /^[0-3]{6}$/.test(String(mix))) url.searchParams.set("powers", mix);
+    if (mode !== "daily" && options && globalThis.ThreadTrackOptions) {
+      const config = ThreadTrackOptions.normalize(options);
+      for (const key of ["powers", "shapes", "bonuses"]) url.searchParams.set(key, config[key]);
+    }
     return url.href;
   }
 
