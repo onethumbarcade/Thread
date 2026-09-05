@@ -125,7 +125,7 @@
       ['Growth Orbs',dailyOptions.bonuses[0]],
       ['Bombs',dailyOptions.bonuses[2]],
       ['Fruit',dailyOptions.bonuses[1]],
-      ...['Star','Blaster','Magnet','Slow Motion','Double Points','Energy Cell'].map((name,i)=>[name,dailyOptions.powers[i]])
+      ...['Star','Blaster','Magnet','Slow Motion','2x Points','Energy Cell'].map((name,i)=>[name,dailyOptions.powers[i]])
     ];
     document.querySelector('#daily-frequencies').replaceChildren(...frequencyItems.map(([name,frequency])=>{
       const row=document.createElement('div'),label=document.createElement('dt'),value=document.createElement('dd');
