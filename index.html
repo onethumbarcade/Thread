@@ -589,19 +589,19 @@
       .result > :not(.card-stars) { position: relative; z-index: 1; }
       .card-stars { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
       .card-stars i { position: absolute; bottom: -12px; width: 3px; height: 3px; border-radius: 50%; background: #d9fdff; opacity: 0; box-shadow: 0 0 7px #45efff; animation: starRise 8s linear infinite; }
-      .card-stars i:nth-child(1) { left: 8%; animation-delay: -1s; animation-duration: 7s; }
-      .card-stars i:nth-child(2) { left: 17%; width: 2px; height: 2px; animation-delay: -5s; animation-duration: 9s; }
-      .card-stars i:nth-child(3) { left: 28%; animation-delay: -3s; animation-duration: 8s; box-shadow: 0 0 8px #ff4fd8; }
-      .card-stars i:nth-child(4) { left: 39%; width: 2px; height: 2px; animation-delay: -7s; animation-duration: 11s; }
-      .card-stars i:nth-child(5) { left: 49%; width: 4px; height: 4px; animation-delay: -2s; animation-duration: 9.5s; }
-      .card-stars i:nth-child(6) { left: 61%; animation-delay: -6s; animation-duration: 8.5s; box-shadow: 0 0 8px #ff4fd8; }
-      .card-stars i:nth-child(7) { left: 70%; width: 2px; height: 2px; animation-delay: -4s; animation-duration: 10s; }
-      .card-stars i:nth-child(8) { left: 81%; animation-delay: -8s; animation-duration: 12s; }
-      .card-stars i:nth-child(9) { left: 90%; width: 2px; height: 2px; animation-delay: -3.5s; animation-duration: 7.5s; }
-      .card-stars i:nth-child(10) { left: 56%; width: 4px; height: 4px; animation-delay: -9s; animation-duration: 13s; }
+      .card-stars i:nth-child(1) { left: 91.44%; width: 2.45px; height: 2.45px; animation-delay: -4.09s; animation-duration: 7.91s; }
+      .card-stars i:nth-child(2) { left: 55.75%; width: 2.06px; height: 2.06px; animation-delay: -10.02s; animation-duration: 10.65s; }
+      .card-stars i:nth-child(3) { left: 52.42%; width: 3.46px; height: 3.46px; animation-delay: -0.51s; animation-duration: 7.31s; }
+      .card-stars i:nth-child(4) { left: 55.21%; width: 2.35px; height: 2.35px; animation-delay: -3.96s; animation-duration: 7.06s; }
+      .card-stars i:nth-child(5) { left: 5.14%; width: 2.62px; height: 2.62px; animation-delay: -6.31s; animation-duration: 10.81s; }
+      .card-stars i:nth-child(6) { left: 78.64%; width: 2.37px; height: 2.37px; animation-delay: -1.64s; animation-duration: 7.52s; }
+      .card-stars i:nth-child(7) { left: 72.44%; width: 3.21px; height: 3.21px; animation-delay: -1.98s; animation-duration: 10.61s; }
+      .card-stars i:nth-child(8) { left: 50.59%; width: 2.50px; height: 2.50px; animation-delay: -8.44s; animation-duration: 8.92s; }
+      .card-stars i:nth-child(9) { left: 92.11%; width: 2.72px; height: 2.72px; animation-delay: -7.43s; animation-duration: 8.26s; }
+      .card-stars i:nth-child(10) { left: 43.03%; width: 2.63px; height: 2.63px; animation-delay: -11.33s; animation-duration: 12.61s; }
       @keyframes starRise { 0% { transform: translateY(0) scale(.6); opacity: 0; } 15% { opacity: .22; } 75% { opacity: .12; } 100% { transform: translateY(-560px) scale(1.15); opacity: 0; } }
       .falling-stars i { top: -12px; bottom: auto; animation-name: starFall; }
-      @keyframes starFall { 0% { transform: translateY(0) scale(.6); opacity: 0; } 15% { opacity: .2; } 78% { opacity: .11; } 100% { transform: translateY(110vh) scale(1.12); opacity: 0; } }
+      @keyframes starFall { 0% { transform: translateY(0) scale(.6); opacity: 0; } 15% { opacity: .25; } 78% { opacity: .15; } 100% { transform: translateY(110vh) scale(1.12); opacity: 0; } }
       .reduced-motion .card-stars i { animation: none; opacity: .05; }
       .result-best {
         margin: -12px auto 18px !important;
@@ -817,6 +817,14 @@
             ? `daily-${runTrack || 1}`
             : runCode || ThreadTracks.newCode();
       let runOptions = initialOptions, runMix = runOptions.powers;
+      // Keep visual randomness separate from the shared track's seeded layout.
+      const backgroundStars = Array.from({ length: 28 }, () => ({
+        x: Math.random(),
+        y: Math.random(),
+        radius: 1 + Math.random(),
+        opacity: .17 + Math.random() * .12,
+        drift: .08 + Math.random() * .06,
+      }));
       function hashSeed(value) {
         let h = 2166136261;
         for (const ch of String(value)) {
@@ -1411,14 +1419,14 @@
           ctx.stroke();
           ctx.restore();
         }
-        for (let i = 0; i < 28; i++) {
-          ctx.globalAlpha = 0.13 + (i % 4) * 0.04;
+        for (const star of backgroundStars) {
+          ctx.globalAlpha = star.opacity;
           ctx.fillStyle = "#c9eaff";
           ctx.beginPath();
           ctx.arc(
-            (i * 97) % width,
-            (((i * 149 - g.distance * 0.11) % height) + height) % height,
-            1 + (i % 2),
+            star.x * width,
+            (((star.y * height - (settings.reduced ? 0 : g.distance * star.drift)) % height) + height) % height,
+            star.radius,
             0,
             TAU,
           );
