@@ -17,7 +17,8 @@
 .thread-menu-shell { position: relative; width: min(100%,460px); margin: auto; }
 .thread-menu-topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
 .thread-menu-topbar[hidden] { display: none; }
-.thread-home-link { text-decoration: none; pointer-events: auto; }
+.thread-home-link { text-decoration: none; pointer-events: auto; -webkit-tap-highlight-color: transparent; transition: transform .12s ease,filter .12s ease; transform-origin: center; }
+.thread-home-link:active { transform: translateY(3px) scale(.96); filter: brightness(.88); }
 .thread-home-link:focus-visible { outline: 2px solid #76f3ff; outline-offset: 5px; border-radius: 4px; }
 .thread-menu-brand { font-size: 25px; font-weight: 1000; font-style: italic; letter-spacing: 5px; background: linear-gradient(90deg,#35efff,#fff 48%,#ff52d3); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 0 18px #2ce8ff55; }
 .thread-menu-logo { position: relative; flex: 0 0 48px; width: 48px; height: 48px; }
@@ -80,10 +81,13 @@
 .thread-menu-card .power-mix-row input:focus-visible { outline: 2px solid #76f3ff; outline-offset: 3px; }
 .thread-menu-card .mix-scale { display: flex; justify-content: space-between; color: #93a8ca; font-size: 11px; }
 .thread-menu-card .mix-note { margin: 16px 0 4px; color: #9bb6d7; font-size: 12px; line-height: 1.5; }
+.thread-menu-card .mix-reset { display: block; width: min(100%,260px); min-height: 48px; margin: 22px auto 16px; padding: 12px 18px; border: 1px solid #f6d9ff; border-radius: 14px; background: var(--thread-purple-gradient); box-shadow: 0 4px 0 #62318c,0 0 18px #c36aff33; color: #100a25; font: 800 15px Inter,system-ui,sans-serif; cursor: pointer; }
 .thread-menu-card button:focus-visible { outline: 2px solid #76f3ff; outline-offset: 4px; }
 .reduced-motion .thread-menu-card.view.active { animation: none; }
 .reduced-motion .thread-menu-card .switch:after { transition: none; }
+.reduced-motion .thread-home-link { transition: none; }
 @media (prefers-reduced-motion: reduce) {
+  .thread-home-link { transition: none; }
   .thread-menu-card.view.active { animation: none; }
   .thread-menu-card .switch:after { transition: none; }
 }

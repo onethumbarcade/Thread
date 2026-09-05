@@ -2,7 +2,12 @@
 (() => {
   const kinds = ["star", "blaster", "magnet", "slow", "double", "energy"];
   const durations = { star: 7, blaster: 12, magnet: 10, slow: 6, double: 10 };
-  const defaultMix = "222222";
+  const defaultMix = "111111";
+  // Base course speed is 54 + distance / 105. Space pickups by travel time so
+  // later, faster levels don't turn rare rewards into a constant stream.
+  const courseTime = y => 105 * Math.log1p(y / 5670);
+  const courseDistance = seconds => 5670 * Math.expm1(seconds / 105);
+  const minimumGap = 8;
   function normalizeMix(value) { return /^[0-3]{6}$/.test(String(value)) ? String(value) : defaultMix; }
   function readMix() { try { return normalizeMix(localStorage.getItem("thread-power-mix")); } catch { return defaultMix; } }
   function saveMix(value) { try { localStorage.setItem("thread-power-mix", normalizeMix(value)); return true; } catch { return false; } }
@@ -14,35 +19,42 @@
     let seed = (random() * 4294967296) >>> 0;
     const blasterRandom = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
     return {
-      random, blasterRandom, rates, items: [], nextY: 440 + random() * 80,
-      scanned: 0, lastBlaster: -1000, star: 0, blaster: 0, magnet: 0, slow: 0, double: 0, cooldown: 0, shots: [],
+      random, blasterRandom, rates, items: [], nextY: courseDistance(12 + random() * 4),
+      scanned: 0, lastPickupTime: -Infinity, star: 0, blaster: 0, magnet: 0, slow: 0, double: 0, cooldown: 0, shots: [],
     };
   }
   function extend(state, bonuses) {
+    const pending = [];
     // A separate stream keeps bomb-linked blasters independent of generation cadence.
     for (; state.scanned < bonuses.length; state.scanned++) {
       const bomb = bonuses[state.scanned];
       const y = bomb.y - 260;
-      if (bomb.kind !== "bomb" || y < 440 || y < state.lastBlaster + 400) continue;
-      if (state.blasterRandom() >= state.rates.blaster / 3) continue;
-      state.items.push(pickup(y, "blaster", state.blasterRandom));
-      state.lastBlaster = y;
+      if (bomb.kind !== "bomb" || courseTime(y) < 12) continue;
+      const pace = 1 + y / 5670;
+      if (state.blasterRandom() >= state.rates.blaster / (3 * pace)) continue;
+      pending.push(pickup(y, "blaster", state.blasterRandom));
     }
     const candidates = kinds.filter(kind => kind !== "blaster");
     const total = candidates.reduce((sum, kind) => sum + state.rates[kind] * .08, 0);
-    // Keep a full bomb lookahead before deciding whether a slot is free.
-    while (state.nextY < (bonuses.at(-1)?.y || 0) - 340) {
+    // All bomb-linked candidates up to this point are known. Merge both streams
+    // in course order before spacing them, independent of viewport/extension size.
+    while (state.nextY < (bonuses.at(-1)?.y || 0) - 260) {
       const y = state.nextY;
-      state.nextY += 320 + state.random() * 160;
+      state.nextY = courseDistance(courseTime(y) + 12 + state.random() * 6);
       let roll = state.random() * Math.max(1, total), kind;
       for (const candidate of candidates) {
         roll -= state.rates[candidate] * .08;
         if (roll < 0) { kind = candidate; break; }
       }
-      if (kind && !state.items.some(item => item.kind === "blaster" && Math.abs(item.y - y) < 80))
-        state.items.push(pickup(y, kind, state.random));
+      if (kind) pending.push(pickup(y, kind, state.random));
     }
-    state.items.sort((a, b) => a.y - b.y);
+    pending.sort((a, b) => a.y - b.y);
+    for (const item of pending) {
+      const time = courseTime(item.y);
+      if (time - state.lastPickupTime < minimumGap) continue;
+      state.items.push(item);
+      state.lastPickupTime = time;
+    }
   }
   function position(item, trackX, centerX, range) {
     const offset = Math.min(item.offset, range);

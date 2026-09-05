@@ -130,7 +130,7 @@ test('post-game shares contain the exact played track and preserve scores', asyn
     const before = [...run.storage];
     await run.get('#share-score').onclick();
     assert(payload.url.includes(expected));
-    assert.equal(new URL(payload.url).searchParams.get('powers'), search.includes('daily') ? null : '222222');
+    assert.equal(new URL(payload.url).searchParams.get('powers'), search.includes('daily') ? null : '111111');
     assert(payload.text.includes('51,106'));
     assert(payload.text.includes(search.includes('daily') ? 'Daily Track #2' : 'Track code: N3ON-4821'));
     assert.equal(vm.runInContext('game.score', run.context), 51106);

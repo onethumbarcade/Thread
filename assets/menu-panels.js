@@ -46,9 +46,9 @@
       ["slow", "◷ Slow Motion", "6 seconds at 60% course speed"],
       ["double", "2× Double Points", "10 seconds of double scoring"],
       ["energy", "+ Energy Cell", "Instantly restores health to 100%"],
-    ].map(([kind, label, description]) => `<div class="power-mix-row"><label for="mix-${kind}">${label}<output id="mix-${kind}-value" for="mix-${kind}">Normal</output></label><small>${description}</small><input id="mix-${kind}" data-power-rate="${kind}" type="range" min="0" max="3" step="1" value="2" aria-valuetext="Normal"><div class="mix-scale" aria-hidden="true"><span>Off</span><span>Rare</span><span>Normal</span><span>Often</span></div></div>`).join("")}
+    ].map(([kind, label, description]) => `<div class="power-mix-row"><label for="mix-${kind}">${label}<output id="mix-${kind}-value" for="mix-${kind}">Rare</output></label><small>${description}</small><input id="mix-${kind}" data-power-rate="${kind}" type="range" min="0" max="3" step="1" value="1" aria-valuetext="Rare"><div class="mix-scale" aria-hidden="true"><span>Off</span><span>Rare</span><span>Normal</span><span>Often</span></div></div>`).join("")}
     <p class="mix-note" id="power-mix-status" role="status">Saves automatically for your next generated run. Shared links include the mix; a code uses your chosen mix.</p>
-    <button class="scoring-link" id="reset-power-mix">Reset to defaults</button>
+    <button class="mix-reset" id="reset-power-mix">Reset to Defaults</button>
     <button class="action" id="play-power-mix">PLAY WITH THIS MIX</button>
   `,
   };

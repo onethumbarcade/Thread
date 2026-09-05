@@ -39,7 +39,7 @@ test('power placement stays seeded across retries, heights, and extension cadenc
   }
   const a = json(short, 'game.powerUps.items'), b = json(tall, 'game.powerUps.items');
   const count = Math.min(a.length, b.length);
-  assert(count > 10);
+  assert(count > 3);
   assert.deepEqual(a.slice(0, count), b.slice(0, count));
   for (const item of a) {
     assert(item.offset >= 92 && item.offset <= 110);
