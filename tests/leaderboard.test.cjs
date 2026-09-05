@@ -62,7 +62,11 @@ test('daily game submits once with its track and simulated duration; custom game
     if(mode==='daily'){
       assert.equal(starts[0],2);assert.ok(finishes[0].duration>0);
       assert.match(g.get('#result-ranking').textContent,/DAILY RANK #3/);
-      assert.equal(g.get('#result-board-link').href,'update-2-preview.html?view=leaderboard&track=2');
+      const link = new URL(g.get('#result-board-link').href);
+      assert.equal(link.searchParams.get('view'),'leaderboard');
+      assert.equal(link.searchParams.get('track'),'2');
+      assert.equal(link.searchParams.get('from'),'result');
+      assert.ok(link.searchParams.get('result'));
     }else assert.equal(g.get('#result-board-link').hidden,true);
   }
 });

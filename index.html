@@ -312,7 +312,8 @@
         letter-spacing: 2px;
       }
       .result {
-        overflow: hidden;
+        max-height: calc(100dvh - 32px);
+        overflow-y: auto;
         border-color: #32efff99;
         background: radial-gradient(circle at 50% 0, #182449f2, #050711fa 70%);
         box-shadow:
@@ -652,7 +653,7 @@
       }
     </style>
     <link rel="stylesheet" href="assets/menu-panels.css?v=track-options-1" />
-      <link rel="stylesheet" href="assets/leaderboard.css?v=anonymous-archive-1">
+      <link rel="stylesheet" href="assets/leaderboard.css?v=result-return-1">
   </head>
   <body>
     <main class="game">
@@ -750,6 +751,7 @@
     <script src="assets/track-sharing.js?v=track-options-1"></script>
     <script src="assets/daily-tracks.js?v=daily-variety-2"></script>
     <script src="assets/leaderboard.js?v=daily-variety-2"></script>
+    <script src="assets/result-navigation.js?v=result-return-1"></script>
     <script src="assets/daily-music.js?v=generated-music-1"></script>
     <script src="assets/track-options.js?v=daily-variety-2"></script>
     <script src="assets/collectibles.js"></script>
@@ -801,6 +803,7 @@
         musicStarted = false,
         musicSession = 0,
         rankedSession,
+        completedResult,
         optionsReturn;
       const runParams = new URLSearchParams(location.search),
         runMode = runParams.get("mode") || "generated",
@@ -1025,7 +1028,79 @@
           if (outcome === "unavailable" && session === musicSession) musicStarted = false;
         });
       }
+      function showResult(isBest) {
+        const runScore = Math.floor(game.score);
+        newBest.textContent = runScore.toLocaleString();
+        newBest.classList.toggle("show", isBest);
+        document.querySelector("#final-score").classList.toggle("score-hidden", isBest);
+        startBest.textContent = best.toLocaleString();
+        resultBest.textContent = best.toLocaleString();
+        slider.classList.add("hidden");
+        result.classList.remove("hidden");
+        const finalScore = document.querySelector("#final-score"),
+          distanceBadge = document.querySelector("#distance"),
+          brokenLabel = result.querySelector(".eyebrow");
+        finalScore.style.cssText =
+          "color:#73f5ff!important;-webkit-text-fill-color:#73f5ff!important;background:none!important;text-shadow:0 5px 3px #000d,0 9px 12px #000b,0 0 8px #fff,0 0 20px #25eaff,0 0 38px #ff42d0";
+        distanceBadge.style.cssText =
+          "display:table!important;margin:10px auto 26px!important;padding:10px 20px!important;border:2px solid #48efff!important;border-radius:999px!important;background:#0b1838!important;color:#f2fbff!important;box-shadow:0 0 14px #2ce8ff55,inset 0 0 16px #ff4bd81f";
+        brokenLabel.textContent = isBest
+          ? "NEW HIGH SCORE"
+          : "THREAD BROKEN";
+        brokenLabel.style.cssText =
+          "color:#ff61dc!important;text-shadow:0 0 8px #ff61dc,0 0 20px #31edff";
+        finalScore.textContent = runScore.toLocaleString();
+        document.querySelector("#distance").textContent = Math.floor(game.distance / 10) + "m threaded";
+      }
+      function rememberResult(isBest = completedResult?.isBest) {
+        if (runMode !== "daily" || !game || game.running) return;
+        const { score, distance, ringRadius, ringOffset, speed, elapsed } = game;
+        completedResult = ThreadResultNavigation.save({
+          track: Number(runTrack), score, distance, ringRadius, ringOffset, speed, elapsed,
+          best, isBest, ranking: document.querySelector("#result-ranking").textContent,
+        }, completedResult);
+        if (completedResult) document.querySelector("#result-board-link").href = ThreadResultNavigation.leaderboardUrl(completedResult);
+      }
+      async function refreshResultRanking() {
+        const finishedGame = game;
+        if (!completedResult || !globalThis.ThreadLeaderboard?.board) return;
+        try {
+          await ThreadLeaderboard.flush();
+          const data = await ThreadLeaderboard.board("daily", Number(runTrack));
+          if (game !== finishedGame || game.running) return;
+          document.querySelector("#result-ranking").textContent = data.yours
+            ? `DAILY RANK #${data.yours.rank} · GLOBAL BEST ${data.yours.score.toLocaleString()}`
+            : "Play again to post your first ranked score.";
+          rememberResult();
+        } catch {}
+      }
+      function restoreResult() {
+        const saved = runMode === "daily" && ThreadResultNavigation.restore(Number(runTrack));
+        if (!saved) return false;
+        game = fresh(runSeed, dailyTrack.startingShape, dailyTrack.shapes);
+        for (const key of ["score", "distance", "ringRadius", "ringOffset", "speed", "elapsed"]) game[key] = saved[key];
+        game.running = false;
+        game.energy = 0;
+        game.stage = Math.floor(game.score / (dailyTrack.levelScore || STAGE)) + 1;
+        extend(game.nodes, game.distance + height * 2, game.random);
+        best = saved.best;
+        started = true;
+        completedResult = saved;
+        startCard.classList.add("hidden");
+        hud.classList.remove("hidden");
+        showResult(saved.isBest);
+        document.querySelector("#result-ranking").textContent = saved.ranking;
+        document.querySelector("#result-board-link").hidden = false;
+        rememberResult();
+        startMenuMusic();
+        refreshResultRanking();
+        return true;
+      }
+      document.querySelector("#result-board-link").onclick = () => rememberResult();
+      addEventListener("pageshow", event => { if (event.persisted) refreshResultRanking(); });
       function begin() {
+        ThreadResultNavigation.clear();
+        completedResult = null;
         stopMenuMusic();
         stopMusic();
         runOptions = initialOptions;
@@ -1363,34 +1438,8 @@
               try {
                 localStorage.setItem(bestStorageKey, best);
               } catch (e) {}
-              newBest.textContent = runScore.toLocaleString();
-              newBest.classList.add("show");
-              document
-                .querySelector("#final-score")
-                .classList.add("score-hidden");
-            } else {
-              newBest.classList.remove("show");
-              document
-                .querySelector("#final-score")
-                .classList.remove("score-hidden");
             }
-            startBest.textContent = best.toLocaleString();
-            resultBest.textContent = best.toLocaleString();
-            slider.classList.add("hidden");
-            result.classList.remove("hidden");
-            const finalScore = document.querySelector("#final-score"),
-              distanceBadge = document.querySelector("#distance"),
-              brokenLabel = result.querySelector(".eyebrow");
-            finalScore.style.cssText =
-              "color:#73f5ff!important;-webkit-text-fill-color:#73f5ff!important;background:none!important;text-shadow:0 5px 3px #000d,0 9px 12px #000b,0 0 8px #fff,0 0 20px #25eaff,0 0 38px #ff42d0";
-            distanceBadge.style.cssText =
-              "display:table!important;margin:10px auto 26px!important;padding:10px 20px!important;border:2px solid #48efff!important;border-radius:999px!important;background:#0b1838!important;color:#f2fbff!important;box-shadow:0 0 14px #2ce8ff55,inset 0 0 16px #ff4bd81f";
-            brokenLabel.textContent = isBest
-              ? "NEW HIGH SCORE"
-              : "THREAD BROKEN";
-            brokenLabel.style.cssText =
-              "color:#ff61dc!important;text-shadow:0 0 8px #ff61dc,0 0 20px #31edff";
-            finalScore.textContent = runScore.toLocaleString();
+            showResult(isBest);
             const finishedSession = rankedSession;
             const rankingStatus = document.querySelector("#result-ranking");
             if (finishedSession) {
@@ -1402,13 +1451,16 @@
                 rankingStatus.textContent = data.yours
                   ? `DAILY RANK #${data.yours.rank} · GLOBAL BEST ${data.yours.score.toLocaleString()}`
                   : "Play again to post your first ranked score.";
+                rememberResult();
               }).catch(error => {
-                if (rankedSession === finishedSession) rankingStatus.textContent = error.message;
+                if (rankedSession === finishedSession) {
+                  rankingStatus.textContent = error.message;
+                  rememberResult();
+                }
               });
             } else rankingStatus.textContent = "Custom track · Unranked";
 
-            document.querySelector("#distance").textContent =
-              Math.floor(g.distance / 10) + "m threaded";
+            rememberResult(isBest);
           }
         }
         let sky = ctx.createLinearGradient(0, 0, 0, height);
@@ -1685,8 +1737,10 @@
         }
         requestAnimationFrame(frame);
       }
-      if (runParams.has("mode")) begin();
-      else game = fresh(runSeed, dailyTrack?.startingShape || 0, dailyTrack?.shapes || null);
+      if (!restoreResult()) {
+        if (runParams.has("mode")) begin();
+        else game = fresh(runSeed, dailyTrack?.startingShape || 0, dailyTrack?.shapes || null);
+      }
       requestAnimationFrame(frame);
     </script>
   </body>

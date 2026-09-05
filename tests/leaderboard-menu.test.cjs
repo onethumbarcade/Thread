@@ -5,7 +5,7 @@ const path=require('node:path');
 const vm=require('node:vm');
 const {webcrypto}=require('node:crypto');
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
-function menu(search = '') {
+function menu(search = '', navigation) {
   const elements=new Map(),storage=new Map([['thread-daily-1','56392'],['thread-daily-2','47589']]);
   function get(id) {
     if(!elements.has(id))elements.set(id,{id,textContent:'',value:'',hidden:false,dataset:{},children:[],
@@ -19,7 +19,7 @@ function menu(search = '') {
   const context=vm.createContext({crypto:webcrypto,Uint8Array,AbortController,URLSearchParams,
     setTimeout(callback,delay){const timer=setTimeout(callback,delay);timer.unref();return timer;},clearTimeout,addEventListener(){},
     localStorage:{getItem:key=>storage.get(key),setItem:(key,value)=>storage.set(key,value)},
-    ThreadDaily:{today:()=>2},location:{search},
+    ThreadDaily:{today:()=>2},ThreadResultNavigation:navigation,location:{search},
     document:{getElementById:get,createElement:()=>({...get('new-'+elements.size),children:[]}),
       querySelectorAll:selector=>selector==='[data-ranked-best]'?slots:[]},
     async fetch(url,options){
@@ -31,7 +31,7 @@ function menu(search = '') {
       assert.equal(body,undefined,'Opening or refreshing menus must not request an editable profile');
       const data=query.get('board')==='personal'?{from:1,to:2,bests:[{track:1,score},{track:2,score:47433}]}:{board:query.get('board'),track,entries:boardRows||[row],yours:personalRow||row};
       return {ok:true,json:async()=>data};
-    },show(view){context.ThreadLeaderboardMenu.open(view);},
+    },show(view){context.currentView=view;context.ThreadLeaderboardMenu.open(view);},
   });
   for(const name of ['leaderboard.js','leaderboard-menu.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../assets',name),'utf8'),context);
   return {get,storage,context,queries,setScore(value){score=value;},setRows(rows,yours){boardRows=rows;personalRow=yours;},fail(){fail=true;}};
@@ -89,4 +89,23 @@ test('one leaderboard per track opens today, switches to archive records, and ho
   const linked=menu('?view=leaderboard&track=1');await tick();
   assert.equal(Number(linked.get('board-track-select').value),1);
   assert.equal(linked.get('board-entries').children[0].children[2].textContent,'49,964');
+});
+
+test('Back remembers the game summary across track switches and resets for home navigation',async()=>{
+  const calls=[];
+  const linked=menu('?view=leaderboard&track=2&from=result&result=finished-2', {back(id){calls.push(id);return true;}});
+  await tick();
+  linked.get('board-track-select').value='1';linked.get('board-track-select').onchange();await tick();
+  linked.get('leaderboard-back').onclick();
+  assert.deepEqual(calls,['finished-2']);
+  linked.context.show('home');linked.context.show('leaderboard');
+  linked.get('leaderboard-back').onclick();
+  assert.equal(linked.context.currentView,'home');
+  assert.equal(calls.length,1);
+  const direct=menu('?view=leaderboard&track=2');await tick();
+  direct.get('leaderboard-back').onclick();
+  assert.equal(direct.context.currentView,'home');
+  const missing=menu('?view=leaderboard&from=result&result=missing',{back(){return false;}});await tick();
+  missing.get('leaderboard-back').onclick();
+  assert.equal(missing.context.currentView,'home');
 });

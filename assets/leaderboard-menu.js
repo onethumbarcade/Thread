@@ -2,6 +2,14 @@
   const $ = id => document.getElementById(id), api = ThreadLeaderboard;
   let currentTrack = ThreadDaily.today(), revision = 0, activeView = 'home';
   const select = $('board-track-select'), status = $('board-status');
+  const params = new URLSearchParams(location.search), requested = Number(params.get('track'));
+  let resultReturn = params.get('view') === 'leaderboard' && params.get('from') === 'result'
+    ? params.get('result') : null;
+  const backButton = $('leaderboard-back');
+  backButton.onclick = () => {
+    if (resultReturn && globalThis.ThreadResultNavigation?.back(resultReturn)) return;
+    show('home');
+  };
   function renderBests() {
     const best = api.bestFor(ThreadDaily.today());
     $('daily-best').textContent = best ? best.toLocaleString() : '—';
@@ -59,12 +67,13 @@
   $('board-refresh').onclick = loadBoard;
   function open(view) {
     activeView = view;
+    if (view !== 'leaderboard') resultReturn = null;
+    backButton.setAttribute('aria-label', resultReturn ? 'Back to game summary' : 'Back to home');
     if (view === 'today' || view === 'archive') loadScores();
     if (view !== 'leaderboard') { revision++; return; }
     fillTracks(); loadBoard();
   }
   globalThis.ThreadLeaderboardMenu = { open };
-  const params = new URLSearchParams(location.search), requested = Number(params.get('track'));
   if (params.get('view') === 'leaderboard') {
     if (Number.isSafeInteger(requested) && requested > 0 && requested <= ThreadDaily.today()) currentTrack = requested;
     show('leaderboard');

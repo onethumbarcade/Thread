@@ -22,6 +22,7 @@
     #home .mode[data-go="generate"] small{color:#2b1848}
     #home .mode[data-go="archive"],#home .mode[data-go="leaderboard"]{color:#07142c;border-color:#d9f4ff;background:var(--thread-blue-gradient);box-shadow:0 6px 0 #304f8f,0 0 23px #739dff44}
     #home .mode[data-go="archive"] small,#home .mode[data-go="leaderboard"] small{color:#182d52}
+    #today .daily-note{margin-top:26px;font-size:13px;line-height:1.5}
     .hero .daily-frequencies{margin-top:12px;padding-top:12px;border-top:1px solid #55f4e633;color:#a9bedc;font-size:13px;line-height:1.6}
     @media(max-width:360px){#home .mode{padding-right:14px;padding-left:14px;column-gap:10px}#home .mode strong{font-size:18px;letter-spacing:1px}#home .mode .arrow{font-size:28px}}
     .topbar[hidden]{display:none}
@@ -33,7 +34,7 @@
     .guide-head{position:relative;display:flex;align-items:center;justify-content:center;min-height:48px;margin-bottom:18px}.guide-head .back{position:absolute;left:0;top:2px}.guide-title{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 24px;border:1px solid #ff8ae8;border-radius:999px;background:#e934b8;color:#fff;font-size:16px;font-weight:1000;letter-spacing:2px;box-shadow:0 0 18px #ff48ce77,inset 0 1px #fff7;text-align:center}
   </style>
   <link rel="stylesheet" href="assets/menu-panels.css?v=track-options-1">
-  <link rel="stylesheet" href="assets/leaderboard.css?v=track-leaderboards-1">
+  <link rel="stylesheet" href="assets/leaderboard.css?v=result-return-1">
 </head>
 <body>
   <div class="stars" aria-hidden="true"></div>
@@ -57,7 +58,7 @@
       <button class="action" id="play-daily">PLAY TODAY’S TRACK</button>
       <!-- Reserved for event previews a couple of days before the event. -->
       <div class="holiday" id="event-preview" hidden></div>
-      <p class="note">Today’s course is identical for every player and can be replayed from the archive.</p>
+      <p class="note daily-note">Today’s course is identical for every player and can be replayed from the archive.</p>
     </section>
     <section class="card view" id="generate">
       <div class="guide-head"><button class="back" data-go="home">‹</button><div class="guide-title">GENERATE TRACK</div></div>
@@ -90,7 +91,7 @@
       </div>
     </section>
     <section class="card view" id="leaderboard">
-      <div class="guide-head"><button class="back" data-go="home">‹</button><h2 class="guide-title">LEADERBOARDS</h2></div>
+      <div class="guide-head"><button class="back" id="leaderboard-back" data-go="home">‹</button><h2 class="guide-title">LEADERBOARDS</h2></div>
       <label class="board-track" id="board-track-control" for="board-track-select">DAILY TRACK<select id="board-track-select"></select></label>
       <div class="board board-table" id="board-entries" aria-busy="false"></div>
       <div class="board board-table board-yours" id="board-yours"></div>
@@ -129,7 +130,8 @@
     document.querySelector('#play-daily').onclick=()=>playDaily(ThreadDaily.today());
     addEventListener('visibilitychange',()=>{if(!document.hidden && ThreadDaily.today()!==day)location.reload()});
   </script>
-  <script src="assets/leaderboard-menu.js?v=track-leaderboards-1"></script>
+  <script src="assets/result-navigation.js?v=result-return-1"></script>
+  <script src="assets/leaderboard-menu.js?v=result-return-1"></script>
   <script src="assets/generated-track-menu.js?v=track-leaderboards-1"></script>
 </body>
 </html>
