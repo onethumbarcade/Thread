@@ -51,7 +51,10 @@ jobs:
             adb shell svc wifi disable
             adb shell svc data disable
             bash android/gradlew -p android --no-daemon :app:connectedDebugAndroidTest
-            adb pull /sdcard/Android/data/com.onethumbarcade.thread/files/launch.png android-launch.png
+            adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+            adb shell am start -W -n com.onethumbarcade.thread/.MainActivity
+            sleep 3
+            adb exec-out screencap -p > android-launch.png
       - uses: actions/upload-artifact@v4
         if: always()
         with:
