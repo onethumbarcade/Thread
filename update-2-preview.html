@@ -20,14 +20,14 @@
     /* The circular mask reveals 88% of the image width; scale it to fill the badge. */
     .preview.logo-badge img{position:absolute;left:50%;top:50%;display:block;width:calc(100% / 0.88);height:calc(100% / 0.88);max-width:none;object-fit:contain;transform:translate(-49.5%,-49.5%);clip-path:circle(44% at 49.5% 49.5%)}
     .settings-button{position:absolute;top:14px;right:14px;width:46px;height:46px;padding:0;border:1px solid #eaffff;border-radius:50%;background:linear-gradient(110deg,#32efff 0%,#7af7df 48%,#ff55d7 100%);box-shadow:0 5px 0 #08768b,0 0 18px #2ce8ff66;color:#05060b;font-size:23px;font-weight:900;z-index:2}
-    .settings{display:flex;align-items:center;justify-content:space-between;padding:14px 2px;border-bottom:1px solid #ffffff14;text-align:left}.settings span{display:block;font-weight:900}.settings small{display:block;margin-top:3px;color:#8298ba;font-size:10px}.switch{position:relative;width:57px;height:31px;border:1px solid #38eaff66;border-radius:18px;background:#11182a}.switch:after{content:"";position:absolute;left:4px;top:4px;width:21px;height:21px;border-radius:50%;background:#68738a;transition:.2s}.switch.on{background:linear-gradient(90deg,#26dff1,#ff4bd8);box-shadow:0 0 14px #2ce8ff44}.switch.on:after{left:30px;background:#fff;box-shadow:0 0 8px #fff}
-    .guide-head{position:relative;display:flex;align-items:center;justify-content:center;min-height:48px;margin-bottom:18px}.guide-head .back{position:absolute;left:0;top:2px}.guide-title{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 24px;border:1px solid #ff8ae8;border-radius:999px;background:#e934b8;color:#fff;font-size:16px;font-weight:1000;letter-spacing:2px;box-shadow:0 0 18px #ff48ce77,inset 0 1px #fff7;text-align:center}.option-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}.option-actions .action{margin-top:0;padding:0 8px;font-size:13px;background-image:linear-gradient(100deg,#31efff 0%,#79f6df 45%,#ff56d6 100%);background-size:200% 100%;color:#030713;border-color:#eaffff;box-shadow:0 6px 0 #08778b}.option-actions .action:first-child{background-position:left}.option-actions .action:last-child{background-position:right}
+    .guide-head{position:relative;display:flex;align-items:center;justify-content:center;min-height:48px;margin-bottom:18px}.guide-head .back{position:absolute;left:0;top:2px}.guide-title{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 24px;border:1px solid #ff8ae8;border-radius:999px;background:#e934b8;color:#fff;font-size:16px;font-weight:1000;letter-spacing:2px;box-shadow:0 0 18px #ff48ce77,inset 0 1px #fff7;text-align:center}
   </style>
+  <link rel="stylesheet" href="assets/menu-panels.css">
 </head>
 <body>
   <div class="stars"></div>
   <main class="app"><div class="shell">
-    <header class="topbar" hidden><div class="brand">THREAD</div><div class="preview logo-badge"><img src="assets/one-thumb-icon-transparent.webp" alt="One Thumb Arcade"></div></header>
+    <header class="topbar thread-menu-topbar" data-thread-brand hidden></header>
     <section class="card view active" id="home">
       <button class="settings-button" data-go="options" aria-label="Options">⚙︎</button>
       <img class="preview-studio-logo" src="assets/one-thumb-arcade.webp" width="360" height="360" alt="One Thumb Arcade">
@@ -62,34 +62,12 @@
       <div class="board"><div class="rank"><b>1</b><span>NEONFOX</span><b>98,440</b></div><div class="rank"><b>2</b><span>THREADR</span><b>91,205</b></div><div class="rank"><b>3</b><span>PLAYER 8</span><b>87,610</b></div><div class="rank"><b>—</b><span>YOUR RESULT</span><b>NOT PLAYED</b></div></div>
       <p class="note">Demo standings · Global score storage will be connected in the leaderboard phase.</p>
     </section>
-    <section class="card view" id="scoring">
-      <div class="guide-head"><button class="back" data-go="options">‹</button><div class="guide-title">SCORING GUIDE</div></div>
-      <div class="hero" style="--neon:#45efff"><div class="date">THREADING POINTS</div><h3>STAY CENTERED</h3><p>Your score rises continuously while the laser remains inside the tracker. The closer the laser is to the center, the faster you score.</p></div>
-      <div class="board">
-        <div class="rank"><b>◎</b><span>Perfect center at 1× speed</span><b>≈52/sec</b></div>
-        <div class="rank"><b>◯</b><span>Edge catch at 1× speed</span><b>≈22/sec</b></div>
-        <div class="rank"><b>×</b><span>Displayed speed multiplies points</span><b>2× = 2×</b></div>
-        <div class="rank"><b>●</b><span>Growth orb + tracker size</span><b>+250</b></div>
-        <div class="rank"><b>🍒</b><span>Cherry</span><b>+100</b></div>
-        <div class="rank"><b>🍓</b><span>Strawberry</span><b>+125</b></div>
-        <div class="rank"><b>🍌</b><span>Banana</span><b>+150</b></div>
-        <div class="rank"><b>🍰</b><span>Cake</span><b>+250</b></div>
-        <div class="rank"><b>💣</b><span>−35 energy and −8px size</span><b>0 pts</b></div>
-      </div>
-      <div class="holiday">NEW LEVEL EVERY 20,000 POINTS</div>
-      <p class="note">Maximum scores come from precise centering, surviving higher speed multipliers and taking calculated risks for collectibles.</p>
-    </section>
-    <section class="card view" id="options">
-      <div class="guide-head"><button class="back" data-go="home">‹</button><div class="guide-title">OPTIONS</div></div>
-      <div class="settings"><div><span>Sound Effects</span><small>Orbs, fruit, bombs and level changes</small></div><button class="switch on" data-setting="sfx" aria-label="Toggle sound effects"></button></div>
-      <div class="settings"><div><span>Music</span><small>Menu and gameplay soundtracks</small></div><button class="switch on" data-setting="music" aria-label="Toggle music"></button></div>
-      <div class="settings"><div><span>Haptics</span><small>Touch feedback on supported devices</small></div><button class="switch on" data-setting="haptics" aria-label="Toggle haptics"></button></div>
-      <div class="settings"><div><span>Reduced Motion</span><small>Minimizes pulsing and moving stars</small></div><button class="switch" data-setting="reduced" aria-label="Toggle reduced motion"></button></div>
-      <div class="option-actions"><button class="action" data-go="home">DONE</button><button class="action" data-go="scoring">SCORING GUIDE</button></div>
-    </section>
+    <section class="thread-menu-card view" id="scoring" data-thread-panel="scoring"></section>
+    <section class="thread-menu-card view" id="options" data-thread-panel="options"></section>
   </div></main>
   <div class="ad">DISPLAY AD AREA</div>
   <audio id="menu-music" loop preload="auto" src="assets/thread-menu.mp3"></audio>
+  <script src="assets/menu-panels.js"></script>
   <script>
     const launch=new Date('2026-09-04T00:00:00'),now=new Date(),day=Math.max(1,Math.floor((new Date(now.getFullYear(),now.getMonth(),now.getDate())-launch)/86400000)+1),fmt=new Intl.DateTimeFormat(undefined,{weekday:'long',month:'long',day:'numeric'}),shapeNames=['SQUARE','CIRCLE','DIAMOND','TRIANGLE'];
     function hashSeed(value){let h=2166136261;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
