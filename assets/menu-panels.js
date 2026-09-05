@@ -25,8 +25,11 @@
       <div class="rank"><b>🍌</b><span>Banana</span><b>+150</b></div>
       <div class="rank"><b>🍰</b><span>Cake</span><b>+250</b></div>
       <div class="rank"><b>💣</b><span>−35 energy and −8px size</span><b>0 pts</b></div>
+      <div class="rank"><b>★</b><span>Invincibility: blocks bombs, energy loss and shrinking</span><b>7 sec</b></div>
+      <div class="rank"><b>⚡</b><span>Blaster: automatically shoots approaching bombs</span><b>12 sec</b></div>
     </div>
     <div class="holiday">NEW LEVEL EVERY 20,000 POINTS</div>
+    <p class="note">Stars and blasters sit farther off the laser than fruit. Swerve to collect them, then return to the laser to keep scoring. Blasted bombs give no points.</p>
     <p class="note">Maximum scores come from precise centering, surviving higher speed multipliers and taking calculated risks for collectibles.</p>
   `,
   };

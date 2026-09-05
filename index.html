@@ -128,6 +128,9 @@
         background: linear-gradient(90deg, #ff4068, #ffe05b 40%, #41f7d0);
         box-shadow: 0 0 12px #41f7d0;
       }
+      .power-status { display: flex; justify-content: center; gap: 8px; margin-top: 8px; }
+      .power-status span { padding: 4px 9px; border: 1px solid currentColor; border-radius: 999px; background: #070b17ed; color: #ffe66e; font-size: 11px; font-weight: 900; }
+      .power-status #blaster-timer { color: #72f6ff; }
       .slider {
         --thumb: 50%;
         position: absolute;
@@ -663,6 +666,7 @@
           ><span>SCORE<b id="score">0</b></span>
         </div>
         <div class="energy"><i id="energy" style="width: 100%"></i></div>
+        <div class="power-status"><span id="star-timer" hidden></span><span id="blaster-timer" hidden></span></div>
       </header>
       <div
         class="slider hidden"
@@ -685,6 +689,7 @@
           <li><b>Slide</b> to move the tracker</li>
           <li><b>Stay centered</b> to protect your energy</li>
           <li><b>Collect</b> orbs and nearby treats—avoid bombs</li>
+          <li><b>Swerve farther</b> for invincibility stars and bomb blasters</li>
         </ul>
         <div class="best-pill">PERSONAL BEST <b id="start-best">0</b></div>
         <button id="play">PLAY</button
@@ -742,6 +747,9 @@
     ></audio>
     <script src="assets/menu-panels.js"></script>
     <script src="assets/track-sharing.js"></script>
+    <script src="assets/daily-tracks.js"></script>
+    <script src="assets/daily-music.js"></script>
+    <script src="assets/power-ups.js"></script>
     <script>
       const GAP = 86,
         TAU = Math.PI * 2,
@@ -782,11 +790,13 @@
         previous = performance.now(),
         lastHud = 0,
         audio,
+        dailyMusic,
         optionsReturn;
       const runParams = new URLSearchParams(location.search),
         runMode = runParams.get("mode") || "generated",
         runTrack = runParams.get("track"),
         runCode = runParams.get("seed"),
+        dailyTrack = runMode === "daily" ? ThreadDaily.getTrack(runTrack) : null,
         bestStorageKey =
           runMode === "daily" && runTrack
             ? `thread-daily-${runTrack}`
@@ -876,7 +886,7 @@
           collected: false,
         };
       }
-      function fresh(seed = null, shapeOffset = 0) {
+      function fresh(seed = null, shapeOffset = 0, shapeSequence = null) {
         const random = seed == null ? Math.random : seededRandom(hashSeed(seed));
         return {
           running: true,
@@ -892,6 +902,8 @@
           pickupRandom: seed == null ? Math.random : seededRandom(hashSeed(`${seed}:pickups`)),
           bonusRandom: seed == null ? Math.random : seededRandom(hashSeed(`${seed}:bonuses`)),
           shapeOffset,
+          shapeSequence,
+          powerUps: ThreadPowerUps.create(seed == null ? Math.random : seededRandom(hashSeed(`${seed}:powers`))),
           nodes: course(random),
           pickups: Array.from({ length: 24 }, (_, i) => ({
             y: 420 + i * 540 + random() * 180,
@@ -941,6 +953,12 @@
         } else if (k === "bomb") {
           tone(105, 0.35, "sawtooth", 0.11, 0, 32);
           tone(55, 0.42, "square", 0.05, 0.03, 24);
+        } else if (k === "shot") {
+          tone(1350, .09, "sawtooth", .018, 0, 340);
+        } else if (k === "blast") {
+          tone(190, .12, "triangle", .045, 0, 65);
+        } else if (k === "power") {
+          [660, 880, 1320].forEach((f, i) => tone(f, .13, "triangle", .06, i * .06));
         } else
           [520, 660, 880].forEach((f, i) =>
             tone(f, 0.18, "sine", 0.055, i * 0.12, f * 1.08),
@@ -948,6 +966,7 @@
       }
       function stopMusic() {
         bgm.pause();
+        dailyMusic?.stop();
       }
       function stopMenuMusic() {
         menuBgm.pause();
@@ -962,6 +981,15 @@
         stopMenuMusic();
         stopMusic();
         if (!settings.music || !started || !game?.running) return;
+        audio?.resume()?.catch(() => {});
+        if (dailyTrack) {
+          dailyMusic ||= ThreadDailyMusic.createPlayer(audio, dailyTrack.musicIndex);
+          dailyMusic.start().then(outcome => {
+            if (outcome === "unavailable" && settings.music && started && game?.running) playOriginalMusic();
+          });
+        } else playOriginalMusic();
+      }
+      function playOriginalMusic() {
         bgm.currentTime = 0;
         bgm.volume = 0.42;
         bgm.play().catch(() => {});
@@ -975,7 +1003,8 @@
         audio.resume();
         game = fresh(
           runSeed,
-          runMode === "daily" ? hashSeed(runSeed) % 4 : 0,
+          dailyTrack?.startingShape || 0,
+          dailyTrack?.shapes || null,
         );
         previous = performance.now();
         if (runMode === "daily" && runTrack) {
@@ -991,6 +1020,8 @@
         hud.classList.remove("hidden");
         slider.classList.remove("hidden");
         slider.style.setProperty("--thumb", "50%");
+        document.querySelector("#star-timer").hidden = true;
+        document.querySelector("#blaster-timer").hidden = true;
         startMusic();
       }
       document.querySelector("#play").onclick = begin;
@@ -1155,7 +1186,7 @@
           ringY = Math.min(height * 0.6, height - 225),
           cr = Math.min(width * 0.4, 190),
           stage = Math.floor(g.score / STAGE) + 1,
-          s = (stage - 1 + (g.shapeOffset || 0)) % 4,
+          s = g.shapeSequence ? g.shapeSequence[(stage - 1) % g.shapeSequence.length] : (stage - 1 + (g.shapeOffset || 0)) % 4,
           z = Math.max(0.74, 1 - (stage - 1) * 0.024),
           sw = [1, 0.92, 0.68, 0.56][s] * z,
           laser = LASERS[(stage - 1) % 5];
@@ -1173,6 +1204,8 @@
             g.bonuses.push(
               bonus(g.bonuses.at(-1).y + 300 + g.bonusRandom() * 190, g.bonusRandom),
             );
+          ThreadPowerUps.extend(g.powerUps, g.bonuses);
+          ThreadPowerUps.tick(g.powerUps, dt);
           g.speed = 54 + g.distance / 105;
           g.distance += g.speed * dt;
           const px = cx + cr * Math.sin(angle(g.nodes, g.distance)),
@@ -1180,14 +1213,28 @@
             off = Math.abs(px - rx),
             reach = g.ringRadius * sw,
             safe = off <= reach - 6;
+          for (const item of ThreadPowerUps.collect(g.powerUps, g.distance, g.speed * dt + 3, rx, reach,
+            item => ThreadPowerUps.position(item, cx + cr * Math.sin(angle(g.nodes, item.y)), cx, cr))) {
+            sound("power");
+            buzz([18, 25, 18]);
+            effect(g, rx, ringY - 45, item.kind === "star" ? "INVINCIBLE!" : "BLASTER READY!", item.kind === "star" ? "#ffe66e" : "#72f6ff");
+          }
+          for (const event of ThreadPowerUps.shoot(g.powerUps, {
+            dt, bonuses: g.bonuses, distance: g.distance, ringX: rx, ringY,
+            range: Math.max(80, Math.min(380, ringY - top - 20)), getX: o => itemX(o, cx, cr, g),
+          })) {
+            sound(event.kind === "shot" ? "shot" : "blast");
+            if (event.kind === "hit") effect(g, event.x, event.y, "ZAP!", "#72f6ff");
+          }
+          const invincible = g.powerUps.star > 0;
           if (safe) {
             g.energy = Math.min(100, g.energy + 13 * dt);
             g.score +=
               (22 + (1 - off / Math.max(1, g.ringRadius)) * 30) *
               dt *
               (g.speed / 54);
-          } else g.energy -= Math.min(80, 30 + g.distance / 240) * dt;
-          g.ringRadius = Math.max(
+          } else if (!invincible) g.energy -= Math.min(80, 30 + g.distance / 240) * dt;
+          if (!invincible) g.ringRadius = Math.max(
             24,
             g.ringRadius - (0.9 + (g.speed / 54 - 1) * 0.58) * dt,
           );
@@ -1211,6 +1258,11 @@
               if (Math.abs(ix - rx) <= reach + 14) {
                 o.collected = true;
                 if (o.kind === "bomb") {
+                  if (invincible) {
+                    sound("blast");
+                    effect(g, ix, ringY, "BLOCKED", "#ffe66e");
+                    continue;
+                  }
                   g.energy -= 35;
                   g.ringRadius = Math.max(24, g.ringRadius - 8);
                   g.bombFlash = 1;
@@ -1236,6 +1288,8 @@
           if (g.energy <= 0) {
             g.energy = 0;
             g.running = false;
+            g.powerUps.star = g.powerUps.blaster = 0;
+            g.powerUps.shots = [];
             stopMusic();
             startMenuMusic();
             const runScore = Math.floor(g.score),
@@ -1381,9 +1435,72 @@
         const currentX = cx + cr * Math.sin(angle(g.nodes, g.distance)),
           ringX = cx + g.ringOffset,
           on = Math.abs(currentX - ringX) <= g.ringRadius * sw - 6;
-        ctx.strokeStyle = on ? "#ffd447" : "#ff5470";
+        for (const item of g.powerUps.items) {
+          if (item.collected) continue;
+          const sy = ringY - (item.y - g.distance);
+          if (sy < top - 30 || sy > bottom + 30) continue;
+          const x = ThreadPowerUps.position(item, cx + cr * Math.sin(angle(g.nodes, item.y)), cx, cr);
+          ctx.save();
+          ctx.translate(x, sy);
+          const pulse = settings.reduced ? 1 : 1 + Math.sin(time * .005 + item.y) * .06;
+          ctx.scale(pulse, pulse);
+          ctx.fillStyle = "#0b1430";
+          ctx.strokeStyle = item.kind === "star" ? "#ffe66e" : "#72f6ff";
+          ctx.shadowColor = ctx.strokeStyle;
+          ctx.shadowBlur = 16;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(0, 0, 19, 0, TAU);
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = ctx.strokeStyle;
+          ctx.shadowBlur = 6;
+          if (item.kind === "star") {
+            ctx.beginPath();
+            for (let point = 0; point < 10; point++) {
+              const a = point * Math.PI / 5 - Math.PI / 2, r = point % 2 ? 6 : 14;
+              point ? ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r) : ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+            }
+            ctx.closePath();
+            ctx.fill();
+          } else {
+            ctx.fillRect(-10, -9, 6, 20);
+            ctx.fillRect(4, -9, 6, 20);
+            ctx.fillRect(-6, 5, 12, 6);
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(-9, -15, 4, 5);
+            ctx.fillRect(5, -15, 4, 5);
+          }
+          ctx.restore();
+        }
+        ctx.save();
+        ctx.strokeStyle = "#b8ffff";
+        ctx.lineWidth = 4;
+        ctx.shadowColor = "#35eaff";
+        ctx.shadowBlur = 12;
+        for (const shot of g.powerUps.shots) {
+          ctx.beginPath();
+          ctx.moveTo(shot.x, shot.y);
+          ctx.lineTo(shot.x - shot.dx * 20, shot.y - shot.dy * 20);
+          ctx.stroke();
+        }
+        if (g.powerUps.blaster > 0) {
+          ctx.fillStyle = "#72f6ff";
+          ctx.fillRect(ringX - 14, ringY - g.ringRadius - 10, 7, 18);
+          ctx.fillRect(ringX + 7, ringY - g.ringRadius - 10, 7, 18);
+        }
+        if (g.powerUps.star > 0) {
+          ctx.strokeStyle = "#fff5ad";
+          ctx.lineWidth = 2;
+          ctx.shadowColor = "#ffe66e";
+          ctx.beginPath();
+          ctx.arc(ringX, ringY, g.ringRadius * 1.2 + 12, 0, TAU);
+          ctx.stroke();
+        }
+        ctx.restore();
+        ctx.strokeStyle = g.powerUps.star > 0 ? "#fff5ad" : on ? "#ffd447" : "#ff5470";
         ctx.lineWidth = 7;
-        ctx.shadowColor = on ? "#ffd447" : "#ff3158";
+        ctx.shadowColor = g.powerUps.star > 0 ? "#ffe66e" : on ? "#ffd447" : "#ff3158";
         ctx.shadowBlur = 18 + (settings.reduced ? 0 : g.flash * 18);
         shape(ringX, ringY, g.ringRadius, s, z);
         ctx.stroke();
@@ -1416,11 +1533,16 @@
           speed.textContent = (g.speed / 54).toFixed(1) + "×";
           score.textContent = Math.floor(g.score).toLocaleString();
           energy.style.width = Math.round(g.energy) + "%";
+          for (const kind of ["star", "blaster"]) {
+            const timer = document.querySelector(`#${kind}-timer`);
+            timer.hidden = g.powerUps[kind] <= 0;
+            timer.textContent = `${kind === "star" ? "★ INVINCIBLE" : "⚡ BLASTER"} ${Math.ceil(g.powerUps[kind])}s`;
+          }
         }
         requestAnimationFrame(frame);
       }
       if (runParams.has("mode")) begin();
-      else game = fresh(runSeed, runMode === "daily" ? hashSeed(runSeed) % 4 : 0);
+      else game = fresh(runSeed, dailyTrack?.startingShape || 0, dailyTrack?.shapes || null);
       requestAnimationFrame(frame);
     </script>
   </body>

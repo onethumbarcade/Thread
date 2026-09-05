@@ -48,7 +48,7 @@
     </section>
     <section class="card view" id="today">
       <div class="guide-head"><button class="back" data-go="home">‹</button><div class="guide-title" id="today-id">TODAY’S TRACK: #1</div></div>
-      <div class="hero" style="--neon:#45f0dd"><div class="date" id="today-date"></div><h3>THE DAILY THREAD</h3><p>One laser. One layout. One worldwide leaderboard.</p></div>
+      <div class="hero" style="--neon:#45f0dd"><div class="date" id="today-date"></div><h3>THE DAILY THREAD</h3><p id="daily-rules">One laser. One layout. One worldwide leaderboard.</p></div>
       <div class="fingerprint"><span>STARTING SHAPE<b id="track-code">—</b></span><span>ATTEMPTS<b id="attempts">0</b></span><span>YOUR BEST<b id="daily-best">—</b></span></div>
       <button class="action" id="play-daily">PLAY TODAY’S TRACK</button><button class="action secondary" data-go="leaderboard">VIEW LEADERBOARD</button>
       <div class="holiday">NEXT SPECIAL EVENT · HALLOWEEN TRACK</div>
@@ -90,15 +90,16 @@
   <audio id="menu-music" loop preload="auto" src="assets/thread-menu.mp3"></audio>
   <script src="assets/menu-panels.js"></script>
   <script src="assets/track-sharing.js"></script>
+  <script src="assets/daily-tracks.js"></script>
   <script>
-    const launch=new Date('2026-09-04T00:00:00'),now=new Date(),day=Math.max(1,Math.floor((new Date(now.getFullYear(),now.getMonth(),now.getDate())-launch)/86400000)+1),fmt=new Intl.DateTimeFormat(undefined,{weekday:'long',month:'long',day:'numeric'}),shapeNames=['SQUARE','CIRCLE','DIAMOND','TRIANGLE'];
-    function hashSeed(value){let h=2166136261;for(const ch of String(value)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}return h>>>0}
-    const dailyShape=shapeNames[hashSeed(`daily-${day}`)%shapeNames.length],dailyBest=Number(localStorage.getItem(`thread-daily-${day}`)||0),attempts=Number(localStorage.getItem(`thread-daily-attempts-${day}`)||0);
+    const launch=new Date('2026-09-04T00:00:00'),now=new Date(),day=Math.max(1,Math.floor((new Date(now.getFullYear(),now.getMonth(),now.getDate())-launch)/86400000)+1),fmt=new Intl.DateTimeFormat(undefined,{weekday:'long',month:'long',day:'numeric'});
+    const dailyTrack=ThreadDaily.getTrack(day),dailyShape=dailyTrack.startingShapeName,dailyBest=Number(localStorage.getItem(`thread-daily-${day}`)||0),attempts=Number(localStorage.getItem(`thread-daily-attempts-${day}`)||0);
+    document.querySelector('#daily-rules').textContent=dailyTrack.description;
     document.querySelector('#today-id').textContent=`TODAY’S TRACK: #${day}`;document.querySelector('#board-id').textContent=`TRACK #${day}`;document.querySelector('#today-date').textContent=fmt.format(now).toUpperCase();document.querySelector('#home-today').textContent=`Track #${day} · ${fmt.format(now)}`;document.querySelector('#track-code').textContent=dailyShape;document.querySelector('#attempts').textContent=attempts;document.querySelector('#daily-best').textContent=dailyBest?dailyBest.toLocaleString():'—';
     function show(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelector('.topbar').hidden=id==='home';scrollTo(0,0)}document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
     let settings={sfx:true,music:true,haptics:true,reduced:false};try{settings={...settings,...JSON.parse(localStorage.getItem('thread-settings')||'{}')}}catch(e){}const menuMusic=document.querySelector('#menu-music');menuMusic.volume=.34;function syncMusic(){settings.music?menuMusic.play().catch(()=>{}):menuMusic.pause()}function refreshSettings(){document.querySelectorAll('[data-setting]').forEach(b=>b.classList.toggle('on',!!settings[b.dataset.setting]));document.body.classList.toggle('reduced-motion',!!settings.reduced)}document.querySelectorAll('[data-setting]').forEach(b=>b.onclick=()=>{settings[b.dataset.setting]=!settings[b.dataset.setting];try{localStorage.setItem('thread-settings',JSON.stringify(settings))}catch(e){}refreshSettings();syncMusic()});refreshSettings();addEventListener('pointerdown',syncMusic,{once:true});syncMusic();
     const playDaily=n=>location.href=`index.html?mode=daily&track=${n}`;
-    const list=document.querySelector('#archive-list');for(let i=0;i<24;i++){const d=new Date(now);d.setDate(d.getDate()-i);const n=day-i;if(n<1)break;const saved=localStorage.getItem('thread-daily-'+n);const row=document.createElement('div');row.className='row'+(i===0?' today':'');row.innerHTML=`<div><strong>#${n}</strong><small>${i===0?'TODAY':new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric'}).format(d)}</small></div><div>${saved?`<span class="best">${Number(saved).toLocaleString()}</span><small>PERSONAL BEST</small>`:`<small>${shapeNames[hashSeed(`daily-${n}`)%shapeNames.length]} START</small>`}</div><button>${saved?'REPLAY':'PLAY'}</button>`;row.querySelector('button').onclick=()=>playDaily(n);list.appendChild(row)}
+    const list=document.querySelector('#archive-list');for(let i=0;i<24;i++){const d=new Date(now);d.setDate(d.getDate()-i);const n=day-i;if(n<1)break;const saved=localStorage.getItem('thread-daily-'+n);const row=document.createElement('div');row.className='row'+(i===0?' today':'');row.innerHTML=`<div><strong>#${n}</strong><small>${i===0?'TODAY':new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric'}).format(d)}</small></div><div>${saved?`<span class="best">${Number(saved).toLocaleString()}</span><small>PERSONAL BEST</small>`:`<small>${ThreadDaily.getTrack(n).archiveLabel}</small>`}</div><button>${saved?'REPLAY':'PLAY'}</button>`;row.querySelector('button').onclick=()=>playDaily(n);list.appendChild(row)}
     document.querySelector('#play-daily').onclick=()=>playDaily(day);
   </script>
   <script src="assets/generated-track-menu.js"></script>

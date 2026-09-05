@@ -6,8 +6,7 @@ const vm = require('node:vm');
 
 const root = path.join(__dirname, '..');
 const read = name => fs.readFileSync(path.join(root, name), 'utf8');
-const gameHtml = read('index.html');
-const gameScript = [...gameHtml.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].at(-1)[1];
+const { game, gameScript, element } = require('./game-harness.cjs');
 const base = 'https://onethumbarcade.github.io/Thread/update-2-preview.html';
 
 function sharing(navigator = {}) {
@@ -16,47 +15,7 @@ function sharing(navigator = {}) {
   return context.ThreadTracks;
 }
 
-function element(id) {
-  const classes = new Set();
-  return {
-    id, dataset: {}, hidden: false, disabled: false, value: '', textContent: '',
-    classList: {
-      add: value => classes.add(value), remove: value => classes.delete(value),
-      toggle: (value, on) => on ? classes.add(value) : classes.delete(value),
-    },
-    style: { setProperty() {} },
-    setAttribute(name, value) { this[name] = value; },
-    removeAttribute(name) { delete this[name]; },
-    focus() { this.focused = true; }, select() { this.selected = true; },
-    querySelectorAll() { return []; },
-    getContext() { return { setTransform() {} }; },
-    play() { return Promise.resolve(); }, pause() {},
-  };
-}
-
-function game(search, navigator = {}, height = 844) {
-  const elements = new Map(), storage = new Map();
-  const get = id => {
-    if (!elements.has(id)) elements.set(id, element(id));
-    return elements.get(id);
-  };
-  const context = vm.createContext({
-    URL, URLSearchParams, navigator,
-    location: { href: base.replace('update-2-preview.html', 'index.html') + search, search },
-    innerWidth: 390, innerHeight: height, devicePixelRatio: 1,
-    performance: { now: () => 0 },
-    localStorage: { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, String(value)) },
-    document: { body: get('body'), querySelector: get, querySelectorAll: () => [] },
-    AudioContext: class { resume() {} },
-    addEventListener() {}, requestAnimationFrame() {}, setTimeout() {},
-  });
-  context.window = context;
-  vm.runInContext(read('assets/track-sharing.js'), context);
-  vm.runInContext(gameScript, context);
-  return { context, get, storage };
-}
-
-const snapshot = context => JSON.parse(vm.runInContext('JSON.stringify({nodes:game.nodes,pickups:game.pickups,bonuses:game.bonuses,shape:game.shapeOffset})', context));
+const snapshot = context => JSON.parse(vm.runInContext('JSON.stringify({nodes:game.nodes,pickups:game.pickups,bonuses:game.bonuses,shape:game.shapeOffset,shapes:game.shapeSequence})', context));
 
 test('codes accept common paste formats and reject malformed input', () => {
   const tracks = sharing();
@@ -140,7 +99,7 @@ test('first load and retries retain the seeded course and daily identity', () =>
   for (const search of ['?mode=generated&seed=N3ON-4821', '?mode=daily&track=2']) {
     const run = game(search);
     const initial = snapshot(run.context);
-    const expected = JSON.parse(vm.runInContext('JSON.stringify((g=>({nodes:g.nodes,pickups:g.pickups,bonuses:g.bonuses,shape:g.shapeOffset}))(fresh(runSeed,runMode==="daily"?hashSeed(runSeed)%4:0)))', run.context));
+    const expected = JSON.parse(vm.runInContext('JSON.stringify((g=>({nodes:g.nodes,pickups:g.pickups,bonuses:g.bonuses,shape:g.shapeOffset,shapes:g.shapeSequence}))(fresh(runSeed,dailyTrack?.startingShape||0,dailyTrack?.shapes||null)))', run.context));
     assert.deepEqual(initial, expected);
     run.get('#again').onclick();
     assert.deepEqual(snapshot(run.context), initial);
@@ -154,7 +113,7 @@ test('course continuation is independent of screen height and frame cadence', ()
   const tall = game('?mode=generated&seed=N3ON-4821', {}, 1200);
   const generation = gameScript.slice(gameScript.indexOf('          extend(g.nodes, g.distance + height * 2'), gameScript.indexOf('          g.speed = 54 +'));
   for (const [run, step] of [[short, 113], [tall, 809]]) {
-    vm.runInContext(`{const g=game; for(g.distance=0;g.distance<40000;g.distance+=${step}){${generation}}}`, run.context);
+    vm.runInContext(`{const g=game,dt=0; for(g.distance=0;g.distance<40000;g.distance+=${step}){${generation}}}`, run.context);
   }
   const a = snapshot(short.context), b = snapshot(tall.context);
   for (const key of ['nodes', 'pickups', 'bonuses']) {
