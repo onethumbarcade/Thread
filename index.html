@@ -643,7 +643,7 @@
       ></canvas>
       <header class="hud hidden" id="hud">
         <div class="hudtop">
-          <div class="brand">THREAD</div>
+          <a class="brand thread-home-link" href="update-2-preview.html" aria-label="THREAD — title card">THREAD</a>
           <div class="level">LEVEL <b id="level">1</b></div>
         </div>
         <div class="meters">
@@ -1072,6 +1072,7 @@
         );
       }
       addEventListener("pointerdown", (e) => {
+        if (e.target.closest(".thread-home-link")) return;
         if (!started || !game?.running) return;
         pointer = true;
         pointerX = e.clientX;

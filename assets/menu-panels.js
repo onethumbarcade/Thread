@@ -40,8 +40,8 @@
   });
   document.querySelectorAll("[data-thread-brand]").forEach((header) => {
     header.innerHTML = `
-      <div class="thread-menu-brand">THREAD</div>
-      <div class="thread-menu-logo"><img src="assets/one-thumb-icon-transparent.webp" alt="One Thumb Arcade" width="160" height="160"></div>
+      <a class="thread-menu-brand thread-home-link" href="update-2-preview.html" aria-label="THREAD — title card">THREAD</a>
+      <a class="thread-menu-logo thread-home-link" href="update-2-preview.html" aria-label="One Thumb Arcade — title card"><img src="assets/one-thumb-icon-transparent.webp" alt="" width="160" height="160"></a>
     `;
   });
 })();
