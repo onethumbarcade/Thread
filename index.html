@@ -377,15 +377,19 @@
         letter-spacing: 2px !important;
       }
       .result-actions #again {
-        background: linear-gradient(100deg, #32efff 0%, #78f7dc 100%) !important;
+        background: var(--thread-purple-gradient) !important;
+        border-color: #f6d9ff !important;
+        box-shadow:
+          0 7px 0 #62318c,
+          0 0 24px #c36aff44 !important;
       }
       #home-button {
         color: #030713 !important;
-        background: linear-gradient(100deg, #78f7dc 0%, #ff53d5 100%) !important;
-        border: 1px solid #eaffff !important;
+        background: var(--thread-blue-gradient) !important;
+        border: 1px solid #d9f4ff !important;
         box-shadow:
-          0 7px 0 #08768b,
-          0 0 24px #ff4bd844 !important;
+          0 7px 0 #304f8f,
+          0 0 24px #739dff44 !important;
       }
       .hidden {
         display: none;
@@ -451,27 +455,34 @@
         color: #72f6ff;
         font-size: 13px;
       }
-      .options-btn {
+      .options-btn,
+      .result .options-btn {
         position: absolute !important;
         top: 14px;
         right: 14px;
         width: 42px !important;
         min-height: 42px !important;
         padding: 0 !important;
-        border: 1px solid #51efff77 !important;
+        border: 1px solid #f6d9ff !important;
         border-radius: 50% !important;
         color: #05060b !important;
-        background: linear-gradient(110deg, #32efff 0%, #7af7df 48%, #ff55d7 100%) !important;
+        background: var(--thread-purple-gradient) !important;
         text-shadow: none !important;
         box-shadow:
-          0 4px 0 #08768b,
-          0 0 18px #2ce8ff66 !important;
+          0 4px 0 #62318c,
+          0 0 18px #c36aff44 !important;
         font-size: 20px !important;
         letter-spacing: 0 !important;
       }
-      .share-btn {
+      .share-btn,
+      .result .share-btn {
         left: 14px !important;
         right: auto !important;
+        border-color: #d9f4ff !important;
+        background: var(--thread-blue-gradient) !important;
+        box-shadow:
+          0 4px 0 #304f8f,
+          0 0 18px #739dff44 !important;
       }
       .share-btn svg {
         display: block;
