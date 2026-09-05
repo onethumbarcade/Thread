@@ -131,11 +131,13 @@
 .track-code-form input { text-transform: uppercase; letter-spacing: 2px; }
 .track-code-form input[aria-invalid="true"] { border-color: #ff92dd; }
 .track-code-form .action { margin-top: 12px; }
+.track-code-form input, .track-code-form .action { display: block; box-sizing: border-box; width: 100%; margin-left: 0; margin-right: 0; }
 .track-code-error { margin: 8px 0 0; color: #ffa6e5; font-size: 13px; line-height: 1.4; }
 .track-status { margin: 16px 0 4px; color: #9ef6ee; font-size: 13px; line-height: 1.4; text-align: center; }
 .track-code-error:empty, .track-status:empty { display: none; }
 .track-tools button:disabled { opacity: .65; cursor: wait; }
 .track-tools button:focus-visible, .track-code-form :focus-visible, .track-share-manual input:focus-visible { outline: 2px solid #76f3ff; outline-offset: 3px; }
+.track-code-form input:focus-visible { outline-offset: -2px; }
 #result .track-status { position: relative; margin: 16px 0 0; max-width: none; color: #9ef6ee; font-size: 13px; line-height: 1.4; }
 .result .track-share-manual { text-align: left; }
 #result .track-share-manual + .track-status { margin-top: 10px; }
