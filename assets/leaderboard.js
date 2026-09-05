@@ -9,6 +9,16 @@
     token = Array.from(crypto.getRandomValues(new Uint8Array(32)), b => b.toString(16).padStart(2, '0')).join('');
     write(TOKEN_KEY, token);
   }
+  // Only server responses populate the shared best-score view. Device records
+  // remain separate, including runs from before global rankings existed.
+  const rankedBests = new Map(), listeners = new Set();
+  const notify = () => listeners.forEach(listener => listener());
+  const rememberBest = (track, score) => rankedBests.set(track, Math.max(rankedBests.get(track) || 0, score));
+  function acceptBoard(data) {
+    if (data.board !== 'daily' || !Number.isSafeInteger(data.track)) return;
+    rememberBest(data.track, data.yours?.score || 0);
+    notify();
+  }
   async function request(body, query = '') {
     const controller = new AbortController(), timer = setTimeout(() => controller.abort(), 5000);
     try {
@@ -29,7 +39,7 @@
   const pending = () => read(QUEUE_KEY, []).filter(item => item?.body?.action === 'finish' && Date.now() - item.created < 86400000);
   const removePending = id => write(QUEUE_KEY, pending().filter(item => item.body.runId !== id));
   async function sendResult(body) {
-    try { const data = await request(body); removePending(body.runId); return data; }
+    try { const data = await request(body); removePending(body.runId); acceptBoard(data); return data; }
     catch (error) { if (error.status && error.status < 500 && error.status !== 429) removePending(body.runId); throw error; }
   }
   let flushing;
@@ -63,7 +73,24 @@
   async function profile(name) {
     return request({ action: 'profile', ...(name !== undefined ? { name } : {}) });
   }
-  const board = (mode, track) => request(null, '?board=' + encodeURIComponent(mode) + '&track=' + encodeURIComponent(track));
+  async function board(mode, track) {
+    const data = await request(null, '?board=' + encodeURIComponent(mode) + '&track=' + encodeURIComponent(track));
+    acceptBoard(data); return data;
+  }
+  let bestRequest;
+  async function loadBests(from, to) {
+    const key = `${from}:${to}`;
+    if (bestRequest?.key === key) return bestRequest.promise;
+    const promise = request(null, `?board=personal&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`).then(data => {
+      if (!Array.isArray(data.bests) || data.from !== from || data.to !== to) throw new Error('Global scores are unavailable.');
+      const results = new Map(data.bests.map(row => [row.track, row.score]));
+      for (let track = from; track <= to; track++) rememberBest(track, results.get(track) || 0);
+      notify(); return data;
+    }).finally(() => { if (bestRequest?.promise === promise) bestRequest = null; });
+    bestRequest = { key, promise }; return promise;
+  }
+  const bestFor = track => rankedBests.get(Number(track));
+  const subscribe = listener => { listeners.add(listener); return () => listeners.delete(listener); };
   addEventListener('online', flush);
-  globalThis.ThreadLeaderboard = { profile, board, startRun, finishRun, flush };
+  globalThis.ThreadLeaderboard = { profile, board, startRun, finishRun, flush, loadBests, bestFor, subscribe };
 })();

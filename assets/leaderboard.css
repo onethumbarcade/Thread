@@ -3,3 +3,5 @@
 .result-board-link[hidden],.board-track[hidden]{display:none}
 
 .board-tabs .pill{font-size:14px}.leaderboard-profile~.note{font-size:14px;line-height:1.6;color:#9daed0}.board-yours .rank:first-child{color:#b9c9df}
+
+.board-yours[hidden],.device-records[hidden]{display:none}.score-sync-status:empty{display:none}.archive-score-note,.device-records{font-size:14px;line-height:1.6;color:#9daed0}.device-records{margin-top:18px;border-top:1px solid #ffffff18;padding-top:14px}.device-records summary{cursor:pointer;color:#b9c9df}.device-records p{margin:8px 0}

@@ -65,3 +65,30 @@ test('slow submission from a prior attempt does not overwrite the next attemptâ€
   resolve({yours:{rank:1,score:900}});await flushTasks();
   assert.equal(g.get('#result-ranking').textContent,'');
 });
+test('shared bests use server records and preserve higher legacy device scores separately', async () => {
+  const storage=new Map([['thread-daily-1','56392'],['thread-daily-2','47589']]);
+  const c=client(async()=>reply({from:1,to:2,bests:[{track:1,score:49964},{track:2,score:47433}]}),storage);
+  assert.equal(c.api.bestFor(1),undefined);
+  await c.api.loadBests(1,2);
+  assert.equal(c.api.bestFor(1),49964);assert.equal(c.api.bestFor(2),47433);
+  assert.equal(storage.get('thread-daily-1'),'56392');assert.equal(storage.get('thread-daily-2'),'47589');
+});
+test('a new uploaded best refreshes shared views and a late response cannot lower it', async () => {
+  let resolveOld; const events=[];
+  const c=client(async(url,options)=>{
+    if(!options.body)return new Promise(resolve=>{resolveOld=()=>resolve(reply({from:1,to:2,bests:[{track:1,score:49964}]}));});
+    return JSON.parse(options.body).action==='start'?reply({runId:'new-best'}):reply({saved:true,board:'daily',track:1,yours:{score:57000}});
+  });
+  c.api.subscribe(()=>events.push(c.api.bestFor(1)));
+  const old=c.api.loadBests(1,2);
+  await c.api.finishRun(c.api.startRun(1),{score:57000,distance:30000,duration:200});
+  assert.equal(c.api.bestFor(1),57000);
+  resolveOld();await old;
+  assert.equal(c.api.bestFor(1),57000);assert.equal(events.at(-1),57000);
+});
+test('failed loads never fall back to unrelated device scores or erase a known global best', async () => {
+  let fail=false;
+  const c=client(async()=>{if(fail)throw new Error('offline');return reply({from:1,to:2,bests:[{track:1,score:49964}]});},new Map([['thread-daily-1','56392']]));
+  await c.api.loadBests(1,2);fail=true;
+  await assert.rejects(c.api.loadBests(1,2));assert.equal(c.api.bestFor(1),49964);
+});

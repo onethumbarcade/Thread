@@ -652,7 +652,7 @@
       }
     </style>
     <link rel="stylesheet" href="assets/menu-panels.css?v=track-options-1" />
-      <link rel="stylesheet" href="assets/leaderboard.css?v=1">
+      <link rel="stylesheet" href="assets/leaderboard.css?v=shared-bests-1">
   </head>
   <body>
     <main class="game">
@@ -719,7 +719,7 @@
         <div class="new-best" id="new-best">NEW HIGH SCORE!</div>
         <h2 id="final-score">0</h2>
         <span id="distance">0m climbed</span>
-        <div class="result-best">PERSONAL BEST <b id="result-best">0</b></div>
+        <div class="result-best">DEVICE BEST <b id="result-best">0</b></div>
         <p class="result-ranking" id="result-ranking" role="status" aria-live="polite"></p>
         <a class="result-board-link" id="result-board-link" hidden>VIEW GLOBAL LEADERBOARD</a>
         <div class="result-actions">
@@ -749,7 +749,7 @@
     <script src="assets/menu-panels.js?v=track-options-1"></script>
     <script src="assets/track-sharing.js?v=track-options-1"></script>
     <script src="assets/daily-tracks.js?v=leaderboard-1"></script>
-    <script src="assets/leaderboard.js?v=1"></script>
+    <script src="assets/leaderboard.js?v=shared-bests-1"></script>
     <script src="assets/daily-music.js?v=generated-music-1"></script>
     <script src="assets/track-options.js"></script>
     <script src="assets/collectibles.js"></script>
@@ -1399,7 +1399,7 @@
               }).then(data => {
                 if (rankedSession !== finishedSession) return;
                 rankingStatus.textContent = data.yours
-                  ? `DAILY RANK #${data.yours.rank} · BEST ${data.yours.score.toLocaleString()}`
+                  ? `DAILY RANK #${data.yours.rank} · GLOBAL BEST ${data.yours.score.toLocaleString()}`
                   : "Play again to post your first ranked score.";
               }).catch(error => {
                 if (rankedSession === finishedSession) rankingStatus.textContent = error.message;
