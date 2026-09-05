@@ -46,7 +46,6 @@
     status.textContent = 'Loading worldwide rankings…';
     $('board-entries').setAttribute('aria-busy', 'true');
     $('board-entries').replaceChildren(); $('board-yours').replaceChildren();
-    $('board-id').textContent = mode === 'daily' ? `TRACK #${currentTrack}` : 'WORLDWIDE';
     $('board-track-control').hidden = mode !== 'daily';
     $('board-rules').textContent = mode === 'daily' ? 'Best score per player. Archive replays count. New daily track at midnight UTC.' : 'Each player’s highest score across all daily tracks. Custom tracks are unranked.';
     document.querySelectorAll('[data-board]').forEach(button => { const on = button.dataset.board === mode; button.classList.toggle('on', on); button.setAttribute('aria-pressed', on); });
