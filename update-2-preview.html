@@ -23,7 +23,11 @@
     #home .mode[data-go="archive"],#home .mode[data-go="leaderboard"]{color:#07142c;border-color:#d9f4ff;background:var(--thread-blue-gradient);box-shadow:0 6px 0 #304f8f,0 0 23px #739dff44}
     #home .mode[data-go="archive"] small,#home .mode[data-go="leaderboard"] small{color:#182d52}
     #today .daily-note{margin-top:26px;font-size:13px;line-height:1.5}
-    .hero .daily-frequencies{margin-top:12px;padding-top:12px;border-top:1px solid #55f4e633;color:#a9bedc;font-size:13px;line-height:1.6}
+    .hero .daily-frequencies{display:grid;gap:3px;margin:12px 0 0;padding-top:12px;border-top:1px solid #55f4e633;color:#a9bedc;font-size:13px;line-height:1.6;text-align:left}
+    .daily-frequencies .frequency-row{display:flex;align-items:baseline;gap:8px}
+    .daily-frequencies .frequency-row::after{content:"";order:1;flex:1;border-bottom:1px dotted #a9bedc80}
+    .daily-frequencies dt{white-space:nowrap}
+    .daily-frequencies dd{order:2;margin:0;color:#d2e0f5;text-align:right}
     @media(max-width:360px){#home .mode{padding-right:14px;padding-left:14px;column-gap:10px}#home .mode strong{font-size:18px;letter-spacing:1px}#home .mode .arrow{font-size:28px}}
     .topbar[hidden]{display:none}
     .topbar .brand{text-shadow:0 0 18px #2ce8ff55}
@@ -52,7 +56,7 @@
     </section>
     <section class="card view" id="today">
       <div class="guide-head"><button class="back" data-go="home">‹</button><div class="guide-title" id="today-id">TODAY’S TRACK: #1</div></div>
-      <div class="hero" style="--neon:#45f0dd"><div class="date" id="today-date"></div><h3>THE DAILY THREAD</h3><p id="daily-rules">One laser. One layout. One worldwide leaderboard.</p><p class="daily-frequencies" id="daily-frequencies"></p></div>
+      <div class="hero" style="--neon:#45f0dd"><div class="date" id="today-date"></div><h3>THE DAILY THREAD</h3><p id="daily-rules">One laser. One layout. One worldwide leaderboard.</p><dl class="daily-frequencies" id="daily-frequencies" aria-label="Item frequencies"></dl></div>
       <div class="fingerprint"><span>STARTING SHAPE<b id="track-code">—</b></span><span>ATTEMPTS<b id="attempts">0</b></span><span>YOUR BEST<b id="daily-best">—</b></span></div>
       <p class="leaderboard-status score-sync-status" id="today-score-status" role="status"></p>
       <button class="action" id="play-daily">PLAY TODAY’S TRACK</button>
@@ -115,7 +119,19 @@
     const now=new Date(),day=ThreadDaily.today(),fmt=new Intl.DateTimeFormat(undefined,{weekday:'long',month:'long',day:'numeric',timeZone:'UTC'});
     const dailyTrack=ThreadDaily.getTrack(day),dailyShape=dailyTrack.startingShapeName,attempts=Number(localStorage.getItem(`thread-daily-attempts-${day}`)||0);
     document.querySelector('#daily-rules').textContent=dailyTrack.description;
-    document.querySelector('#daily-frequencies').textContent=ThreadTrackOptions.describeFrequencies(dailyTrack.options);
+    const frequencyLabels=['Off','Rare','Normal','Often'];
+    const dailyOptions=ThreadTrackOptions.normalize(dailyTrack.options);
+    const frequencyItems=[
+      ['Growth Orbs',dailyOptions.bonuses[0]],
+      ['Bombs',dailyOptions.bonuses[2]],
+      ['Fruit',dailyOptions.bonuses[1]],
+      ...['Star','Blaster','Magnet','Slow Motion','Double Points','Energy Cell'].map((name,i)=>[name,dailyOptions.powers[i]])
+    ];
+    document.querySelector('#daily-frequencies').replaceChildren(...frequencyItems.map(([name,frequency])=>{
+      const row=document.createElement('div'),label=document.createElement('dt'),value=document.createElement('dd');
+      row.className='frequency-row';label.textContent=name;value.textContent=frequencyLabels[Number(frequency)];
+      row.append(label,value);return row;
+    }));
     document.querySelector('#today-id').textContent=`TODAY’S TRACK: #${day}`;document.querySelector('#today-date').textContent=fmt.format(now).toUpperCase();document.querySelector('#home-today').textContent=`Track #${day} · ${fmt.format(now)}`;document.querySelector('#track-code').textContent=dailyShape;document.querySelector('#attempts').textContent=attempts;document.querySelector('#daily-best').textContent='—';
     function show(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelector('.topbar').hidden=id==='home';scrollTo(0,0);globalThis.ThreadLeaderboardMenu?.open(id)}document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
     let settings={sfx:true,music:true,haptics:true,reduced:false};try{settings={...settings,...JSON.parse(localStorage.getItem('thread-settings')||'{}')}}catch(e){}const menuMusic=document.querySelector('#menu-music');menuMusic.volume=.34;function syncMusic(){settings.music?menuMusic.play().catch(()=>{}):menuMusic.pause()}function refreshSettings(){document.querySelectorAll('[data-setting]').forEach(b=>b.classList.toggle('on',!!settings[b.dataset.setting]));document.body.classList.toggle('reduced-motion',!!settings.reduced)}document.querySelectorAll('[data-setting]').forEach(b=>b.onclick=()=>{settings[b.dataset.setting]=!settings[b.dataset.setting];try{localStorage.setItem('thread-settings',JSON.stringify(settings))}catch(e){}refreshSettings();syncMusic()});refreshSettings();addEventListener('pointerdown',syncMusic,{once:true});syncMusic();
