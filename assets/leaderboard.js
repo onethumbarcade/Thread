@@ -70,9 +70,6 @@
       throw error;
     }
   }
-  async function profile(name) {
-    return request({ action: 'profile', ...(name !== undefined ? { name } : {}) });
-  }
   async function board(mode, track) {
     const data = await request(null, '?board=' + encodeURIComponent(mode) + '&track=' + encodeURIComponent(track));
     acceptBoard(data); return data;
@@ -92,5 +89,5 @@
   const bestFor = track => rankedBests.get(Number(track));
   const subscribe = listener => { listeners.add(listener); return () => listeners.delete(listener); };
   addEventListener('online', flush);
-  globalThis.ThreadLeaderboard = { profile, board, startRun, finishRun, flush, loadBests, bestFor, subscribe };
+  globalThis.ThreadLeaderboard = { board, startRun, finishRun, flush, loadBests, bestFor, subscribe };
 })();

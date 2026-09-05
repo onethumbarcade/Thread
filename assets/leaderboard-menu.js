@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id), api = ThreadLeaderboard;
-  let mode = 'daily', currentTrack = ThreadDaily.today(), revision = 0, profileLoaded = false, activeView = 'home';
+  let mode = 'daily', currentTrack = ThreadDaily.today(), revision = 0, activeView = 'home';
   const select = $('board-track-select'), status = $('board-status');
   function renderBests() {
     const best = api.bestFor(ThreadDaily.today());
@@ -8,10 +8,6 @@
     document.querySelectorAll('[data-ranked-best]').forEach(element => {
       const score = api.bestFor(Number(element.dataset.rankedBest));
       element.textContent = score ? score.toLocaleString() : '—';
-    });
-    document.querySelectorAll('[data-ranked-label]').forEach(element => {
-      const score = api.bestFor(Number(element.dataset.rankedLabel));
-      element.textContent = score === 0 ? 'NO RANKED SCORE' : 'GLOBAL BEST';
     });
   }
   function scoreStatus(message) {
@@ -36,10 +32,13 @@
   }
   function row(entry) {
     const el = document.createElement('div'); el.className = 'rank' + (entry.isYou ? ' you' : '');
-    const rank = document.createElement('b'), name = document.createElement('span'), score = document.createElement('b'), tag = document.createElement('small');
-    rank.textContent = entry.rank; name.textContent = entry.name + (entry.isYou ? ' · YOU' : '');
-    tag.textContent = '#' + entry.tag + (mode === 'alltime' ? ` · Track #${entry.track}` : '');
-    name.appendChild(tag); score.textContent = entry.score.toLocaleString(); el.append(rank, name, score); return el;
+    const rank = document.createElement('b'), name = document.createElement('span'), score = document.createElement('b');
+    rank.textContent = entry.rank;
+    name.textContent = entry.isYou ? 'YOU' : 'PLAYER ' + entry.tag;
+    if (mode === 'alltime') {
+      const track = document.createElement('small'); track.textContent = `Track #${entry.track}`; name.appendChild(track);
+    }
+    score.textContent = entry.score.toLocaleString(); el.append(rank, name, score); return el;
   }
   async function loadBoard() {
     const version = ++revision;
@@ -62,25 +61,14 @@
     } catch { if (version === revision) status.textContent = 'Rankings are unavailable right now. Tap Refresh to try again.'; }
     finally { if (version === revision) $('board-entries').setAttribute('aria-busy', 'false'); }
   }
-  async function loadProfile() {
-    if (profileLoaded) return;
-    try { const player = await api.profile(); $('player-name').value = player.name; $('player-tag').textContent = `Player #${player.tag} · Saved in this browser. Clearing browser data creates a new player.`; profileLoaded = true; }
-    catch { $('player-tag').textContent = 'Connect to load your player name.'; }
-  }
-  $('player-name-form').onsubmit = async event => {
-    event.preventDefault(); const button = $('save-player-name'); button.disabled = true;
-    try { const player = await api.profile($('player-name').value); $('player-name').value = player.name; $('player-name-status').textContent = 'Player name saved.'; await loadBoard(); }
-    catch (error) { $('player-name-status').textContent = error.message; }
-    finally { button.disabled = false; }
-  };
   document.querySelectorAll('[data-board]').forEach(button => button.onclick = () => { mode = button.dataset.board; loadBoard(); });
   select.onchange = () => { currentTrack = Number(select.value); loadBoard(); };
-  $('board-refresh').onclick = () => { loadProfile(); loadBoard(); };
+  $('board-refresh').onclick = loadBoard;
   function open(view) {
     activeView = view;
     if (view === 'today' || view === 'archive') loadScores();
     if (view !== 'leaderboard') { revision++; return; }
-    fillTracks(); loadProfile(); loadBoard();
+    fillTracks(); loadBoard();
   }
   globalThis.ThreadLeaderboardMenu = { open };
   const params = new URLSearchParams(location.search), requested = Number(params.get('track'));
