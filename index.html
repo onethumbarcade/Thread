@@ -798,6 +798,9 @@
         lastHud = 0,
         audio,
         dailyMusic,
+        musicStarted = false,
+        originalMusic = false,
+        musicSession = 0,
         optionsReturn;
       const runParams = new URLSearchParams(location.search),
         runMode = runParams.get("mode") || "generated",
@@ -985,6 +988,9 @@
           );
       }
       function stopMusic() {
+        musicSession++;
+        musicStarted = false;
+        originalMusic = false;
         bgm.pause();
         dailyMusic?.stop();
       }
@@ -999,23 +1005,32 @@
       }
       function startMusic() {
         stopMenuMusic();
-        stopMusic();
         if (!settings.music || !started || !game?.running) return;
         audio?.resume()?.catch(() => {});
+        // The first touch may only be unlocking audio. Keep the current song
+        // and queued notes instead of rewinding a track that already started.
+        if (musicStarted) {
+          if (originalMusic && bgm.paused) bgm.play().catch(() => {});
+          return;
+        }
+        musicStarted = true;
+        const session = musicSession;
         if (dailyTrack) {
           dailyMusic ||= ThreadDailyMusic.createPlayer(audio, dailyTrack.musicIndex);
           dailyMusic.start().then(outcome => {
-            if (outcome === "unavailable" && settings.music && started && game?.running) playOriginalMusic();
+            if (outcome === "unavailable" && session === musicSession && musicStarted && settings.music && started && game?.running) playOriginalMusic();
           });
         } else playOriginalMusic();
       }
       function playOriginalMusic() {
+        originalMusic = true;
         bgm.currentTime = 0;
         bgm.volume = 0.42;
         bgm.play().catch(() => {});
       }
       function begin() {
         stopMenuMusic();
+        stopMusic();
         runOptions = initialOptions;
         runMix = runOptions.powers;
         document.querySelector("#score-share-status").textContent = "";

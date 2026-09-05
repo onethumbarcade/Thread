@@ -7,14 +7,14 @@ function element(id) {
   const classes = new Set();
   const drawing = new Proxy({}, { get: (obj, key) => obj[key] || (() => ({ addColorStop() {} })) });
   return {
-    id, dataset: {}, hidden: false, disabled: false, value: '', textContent: '', plays: 0, pauses: 0,
+    id, dataset: {}, hidden: false, disabled: false, value: '', textContent: '', plays: 0, pauses: 0, paused: true, currentTime: 0,
     classList: { add: value => classes.add(value), remove: value => classes.delete(value),
       toggle: (value, on) => on ? classes.add(value) : classes.delete(value), contains: value => classes.has(value) },
     style: { setProperty() {} }, setAttribute(name, value) { this[name] = value; },
     removeAttribute(name) { delete this[name]; }, focus() { this.focused = true; }, select() { this.selected = true; },
     click() { return this.onclick?.(); },
     querySelectorAll() { return []; }, querySelector() { return element('child'); },
-    getContext() { return drawing; }, play() { this.plays++; return Promise.resolve(); }, pause() { this.pauses++; },
+    getContext() { return drawing; }, play() { this.plays++; this.paused = false; return Promise.resolve(); }, pause() { this.pauses++; this.paused = true; },
   };
 }
 const param = () => ({ value: 0, setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {} });
@@ -31,7 +31,7 @@ function game(search, navigator = {}, height = 844, options = {}) {
     innerWidth: options.width || 390, innerHeight: height, devicePixelRatio: 1, performance: { now: () => 0 },
     localStorage: { getItem: key => storage.get(key) || null, setItem: (key, value) => storage.set(key, String(value)) },
     document: { body: get('body'), querySelector: get, querySelectorAll: selector => selector === '[data-setting]' ? settingButtons : [] },
-    AudioContext: class { currentTime = 0; destination = node(); resume() { return Promise.resolve(); } createGain() { return node(); } createOscillator() { return node(); } },
+    AudioContext: options.AudioContext || class { currentTime = 0; destination = node(); resume() { return Promise.resolve(); } createGain() { return node(); } createOscillator() { return node(); } },
     Path2D: class { moveTo() {} lineTo() {} },
     addEventListener(type, callback) { if (!listeners.has(type)) listeners.set(type, []); listeners.get(type).push(callback); },
     requestAnimationFrame() {}, setTimeout() {},
