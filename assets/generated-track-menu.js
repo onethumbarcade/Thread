@@ -12,11 +12,8 @@
   let trackOptions, dirty = false;
   function describe(options) {
     if (!globalThis.ThreadTrackOptions) return;
-    const labels = ["Off", "Rare", "Normal", "Often"];
     const summary = ThreadTrackOptions.describe(options);
-    const bonuses = ["Growth Orbs", "Fruit", "Bombs"].map((name,i)=>`${name}: ${labels[+options.bonuses[i]]}`).join(" · ");
-    const powers = new Set(options.powers).size === 1 ? labels[+options.powers[0]] : ["Star", "Blaster", "Magnet", "Slow Motion", "Double Points", "Energy Cell"].map((name,i)=>+options.powers[i] ? `${name} ${labels[+options.powers[i]]}` : "").filter(Boolean).join(", ");
-    document.querySelector("#generated-rules").textContent = `${summary} ${bonuses}. Power-ups: ${powers}.`;
+    document.querySelector("#generated-rules").textContent = `${summary} ${ThreadTrackOptions.describeFrequencies(options)}`;
   }
 
   function clearFeedback() {

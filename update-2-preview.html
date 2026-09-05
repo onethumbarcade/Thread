@@ -20,8 +20,9 @@
     #home .mode .arrow{grid-column:2;grid-row:1 / span 2;align-self:center;float:none;margin:0;font-size:34px;line-height:1}
     #home .mode[data-go="generate"]{color:#100a25;border-color:#f6d9ff;background:var(--thread-purple-gradient);box-shadow:0 6px 0 #62318c,0 0 23px #c36aff44}
     #home .mode[data-go="generate"] small{color:#2b1848}
-    #home .mode[data-go="archive"]{color:#07142c;border-color:#d9f4ff;background:var(--thread-blue-gradient);box-shadow:0 6px 0 #304f8f,0 0 23px #739dff44}
-    #home .mode[data-go="archive"] small{color:#182d52}
+    #home .mode[data-go="archive"],#home .mode[data-go="leaderboard"]{color:#07142c;border-color:#d9f4ff;background:var(--thread-blue-gradient);box-shadow:0 6px 0 #304f8f,0 0 23px #739dff44}
+    #home .mode[data-go="archive"] small,#home .mode[data-go="leaderboard"] small{color:#182d52}
+    .hero .daily-frequencies{margin-top:12px;padding-top:12px;border-top:1px solid #55f4e633;color:#a9bedc;font-size:13px;line-height:1.6}
     @media(max-width:360px){#home .mode{padding-right:14px;padding-left:14px;column-gap:10px}#home .mode strong{font-size:18px;letter-spacing:1px}#home .mode .arrow{font-size:28px}}
     .topbar[hidden]{display:none}
     .topbar .brand{text-shadow:0 0 18px #2ce8ff55}
@@ -32,7 +33,7 @@
     .guide-head{position:relative;display:flex;align-items:center;justify-content:center;min-height:48px;margin-bottom:18px}.guide-head .back{position:absolute;left:0;top:2px}.guide-title{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 24px;border:1px solid #ff8ae8;border-radius:999px;background:#e934b8;color:#fff;font-size:16px;font-weight:1000;letter-spacing:2px;box-shadow:0 0 18px #ff48ce77,inset 0 1px #fff7;text-align:center}
   </style>
   <link rel="stylesheet" href="assets/menu-panels.css?v=track-options-1">
-  <link rel="stylesheet" href="assets/leaderboard.css?v=anonymous-archive-1">
+  <link rel="stylesheet" href="assets/leaderboard.css?v=track-leaderboards-1">
 </head>
 <body>
   <div class="stars" aria-hidden="true"></div>
@@ -46,13 +47,14 @@
       <button class="mode primary" data-go="today"><span class="arrow">›</span><strong>TODAY’S TRACK</strong><small id="home-today">Same course for everyone</small></button>
       <button class="mode" data-go="generate"><span class="arrow">›</span><strong>GENERATE TRACK</strong><small>Customize, build, play, and share your own track</small></button>
       <button class="mode" data-go="archive"><span class="arrow">›</span><strong>TRACK ARCHIVE</strong><small>Play missed tracks and revisit results</small></button>
+      <button class="mode" data-go="leaderboard"><span class="arrow">›</span><strong>LEADERBOARDS</strong><small>See the high scores for each daily track</small></button>
     </section>
     <section class="card view" id="today">
       <div class="guide-head"><button class="back" data-go="home">‹</button><div class="guide-title" id="today-id">TODAY’S TRACK: #1</div></div>
-      <div class="hero" style="--neon:#45f0dd"><div class="date" id="today-date"></div><h3>THE DAILY THREAD</h3><p id="daily-rules">One laser. One layout. One worldwide leaderboard.</p></div>
+      <div class="hero" style="--neon:#45f0dd"><div class="date" id="today-date"></div><h3>THE DAILY THREAD</h3><p id="daily-rules">One laser. One layout. One worldwide leaderboard.</p><p class="daily-frequencies" id="daily-frequencies"></p></div>
       <div class="fingerprint"><span>STARTING SHAPE<b id="track-code">—</b></span><span>ATTEMPTS<b id="attempts">0</b></span><span>YOUR BEST<b id="daily-best">—</b></span></div>
       <p class="leaderboard-status score-sync-status" id="today-score-status" role="status"></p>
-      <button class="action" id="play-daily">PLAY TODAY’S TRACK</button><button class="action secondary" data-go="leaderboard">VIEW LEADERBOARD</button>
+      <button class="action" id="play-daily">PLAY TODAY’S TRACK</button>
       <!-- Reserved for event previews a couple of days before the event. -->
       <div class="holiday" id="event-preview" hidden></div>
       <p class="note">Today’s course is identical for every player and can be replayed from the archive.</p>
@@ -88,14 +90,12 @@
       </div>
     </section>
     <section class="card view" id="leaderboard">
-      <div class="guide-head"><button class="back" data-go="today">‹</button><h2 class="guide-title">LEADERBOARD</h2></div>
-      <div class="board-tabs"><button class="pill on" data-board="daily" aria-pressed="true">DAILY RESULTS</button><button class="pill" data-board="alltime" aria-pressed="false">ALL-TIME</button></div>
+      <div class="guide-head"><button class="back" data-go="home">‹</button><h2 class="guide-title">LEADERBOARDS</h2></div>
       <label class="board-track" id="board-track-control" for="board-track-select">DAILY TRACK<select id="board-track-select"></select></label>
       <div class="board board-table" id="board-entries" aria-busy="false"></div>
       <div class="board board-table board-yours" id="board-yours"></div>
       <p class="leaderboard-status" id="board-status" role="status" aria-live="polite"></p>
       <button class="action secondary board-refresh" id="board-refresh">REFRESH</button>
-      <p class="note" id="board-rules"></p>
     </section>
     <section class="thread-menu-card view" id="scoring" data-thread-panel="scoring"></section>
     <section class="thread-menu-card view" id="options" data-thread-panel="options"></section>
@@ -106,14 +106,15 @@
   <script src="assets/menu-panels.js?v=track-options-1"></script>
   <script src="assets/track-sharing.js?v=track-options-1"></script>
   <script src="assets/daily-tracks.js?v=leaderboard-1"></script>
-  <script src="assets/leaderboard.js?v=anonymous-archive-1"></script>
+  <script src="assets/leaderboard.js?v=track-leaderboards-1"></script>
   <script src="assets/power-ups.js?v=track-options-1"></script>
-  <script src="assets/track-options.js"></script>
+  <script src="assets/track-options.js?v=track-leaderboards-1"></script>
   <script src="assets/power-up-menu.js?v=track-options-1"></script>
   <script>
     const now=new Date(),day=ThreadDaily.today(),fmt=new Intl.DateTimeFormat(undefined,{weekday:'long',month:'long',day:'numeric',timeZone:'UTC'});
     const dailyTrack=ThreadDaily.getTrack(day),dailyShape=dailyTrack.startingShapeName,attempts=Number(localStorage.getItem(`thread-daily-attempts-${day}`)||0);
     document.querySelector('#daily-rules').textContent=dailyTrack.description;
+    document.querySelector('#daily-frequencies').textContent=ThreadTrackOptions.describeFrequencies();
     document.querySelector('#today-id').textContent=`TODAY’S TRACK: #${day}`;document.querySelector('#today-date').textContent=fmt.format(now).toUpperCase();document.querySelector('#home-today').textContent=`Track #${day} · ${fmt.format(now)}`;document.querySelector('#track-code').textContent=dailyShape;document.querySelector('#attempts').textContent=attempts;document.querySelector('#daily-best').textContent='—';
     function show(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelector('.topbar').hidden=id==='home';scrollTo(0,0);globalThis.ThreadLeaderboardMenu?.open(id)}document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
     let settings={sfx:true,music:true,haptics:true,reduced:false};try{settings={...settings,...JSON.parse(localStorage.getItem('thread-settings')||'{}')}}catch(e){}const menuMusic=document.querySelector('#menu-music');menuMusic.volume=.34;function syncMusic(){settings.music?menuMusic.play().catch(()=>{}):menuMusic.pause()}function refreshSettings(){document.querySelectorAll('[data-setting]').forEach(b=>b.classList.toggle('on',!!settings[b.dataset.setting]));document.body.classList.toggle('reduced-motion',!!settings.reduced)}document.querySelectorAll('[data-setting]').forEach(b=>b.onclick=()=>{settings[b.dataset.setting]=!settings[b.dataset.setting];try{localStorage.setItem('thread-settings',JSON.stringify(settings))}catch(e){}refreshSettings();syncMusic()});refreshSettings();addEventListener('pointerdown',syncMusic,{once:true});syncMusic();
@@ -128,7 +129,7 @@
     document.querySelector('#play-daily').onclick=()=>playDaily(ThreadDaily.today());
     addEventListener('visibilitychange',()=>{if(!document.hidden && ThreadDaily.today()!==day)location.reload()});
   </script>
-  <script src="assets/leaderboard-menu.js?v=anonymous-archive-1"></script>
-  <script src="assets/generated-track-menu.js?v=track-options-1"></script>
+  <script src="assets/leaderboard-menu.js?v=track-leaderboards-1"></script>
+  <script src="assets/generated-track-menu.js?v=track-leaderboards-1"></script>
 </body>
 </html>
