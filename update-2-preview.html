@@ -32,7 +32,7 @@
     .guide-head{position:relative;display:flex;align-items:center;justify-content:center;min-height:48px;margin-bottom:18px}.guide-head .back{position:absolute;left:0;top:2px}.guide-title{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 24px;border:1px solid #ff8ae8;border-radius:999px;background:#e934b8;color:#fff;font-size:16px;font-weight:1000;letter-spacing:2px;box-shadow:0 0 18px #ff48ce77,inset 0 1px #fff7;text-align:center}
   </style>
   <link rel="stylesheet" href="assets/menu-panels.css?v=track-options-1">
-  <link rel="stylesheet" href="assets/leaderboard.css?v=leaderboard-layout-1">
+  <link rel="stylesheet" href="assets/leaderboard.css?v=archive-cleanup-1">
 </head>
 <body>
   <div class="stars" aria-hidden="true"></div>
@@ -83,8 +83,6 @@
       <div class="archive-tools"><button class="pill on">RECENT</button><button class="pill">COMPLETED</button><button class="pill">CALENDAR</button></div>
       <p class="leaderboard-status score-sync-status" id="archive-score-status" role="status"></p>
       <div class="archive-list" id="archive-list"></div>
-      <p class="archive-score-note">Best scores match the global leaderboard.</p>
-      <details class="device-records" id="device-records" hidden><summary>Device records</summary><p>Older or offline scores saved on this device. These are separate from global rankings.</p><div id="device-record-list"></div></details>
     </section>
     <section class="card view" id="leaderboard">
       <div class="guide-head"><button class="back" data-go="today">‹</button><h2 class="guide-title">LEADERBOARD</h2></div>
@@ -123,14 +121,13 @@
     function show(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelector('.topbar').hidden=id==='home';scrollTo(0,0);globalThis.ThreadLeaderboardMenu?.open(id)}document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
     let settings={sfx:true,music:true,haptics:true,reduced:false};try{settings={...settings,...JSON.parse(localStorage.getItem('thread-settings')||'{}')}}catch(e){}const menuMusic=document.querySelector('#menu-music');menuMusic.volume=.34;function syncMusic(){settings.music?menuMusic.play().catch(()=>{}):menuMusic.pause()}function refreshSettings(){document.querySelectorAll('[data-setting]').forEach(b=>b.classList.toggle('on',!!settings[b.dataset.setting]));document.body.classList.toggle('reduced-motion',!!settings.reduced)}document.querySelectorAll('[data-setting]').forEach(b=>b.onclick=()=>{settings[b.dataset.setting]=!settings[b.dataset.setting];try{localStorage.setItem('thread-settings',JSON.stringify(settings))}catch(e){}refreshSettings();syncMusic()});refreshSettings();addEventListener('pointerdown',syncMusic,{once:true});syncMusic();
     const playDaily=n=>location.href=`index.html?mode=daily&track=${n}`;
-    const list=document.querySelector('#archive-list'),deviceRecords=document.querySelector('#device-record-list');
+    const list=document.querySelector('#archive-list');
     for(let i=0;i<24;i++){
       const d=new Date(now);d.setUTCDate(d.getUTCDate()-i);const n=day-i;if(n<1)break;
       const saved=Number(localStorage.getItem('thread-daily-'+n)||0),played=saved>0||Number(localStorage.getItem('thread-daily-attempts-'+n)||0)>0;
       const row=document.createElement('div');row.className='row'+(i===0?' today':'');
       row.innerHTML=`<div><strong>#${n}</strong><small>${i===0?'TODAY':new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric',timeZone:'UTC'}).format(d)}</small></div><div><span class="best" data-ranked-best="${n}">—</span><small data-ranked-label="${n}">GLOBAL BEST</small></div><button>${played?'REPLAY':'PLAY'}</button>`;
       row.querySelector('button').onclick=()=>playDaily(n);list.appendChild(row);
-      if(Number.isFinite(saved)&&saved>0){const record=document.createElement('p');record.textContent=`Track #${n}: ${saved.toLocaleString()}`;deviceRecords.appendChild(record);document.querySelector('#device-records').hidden=false;}
     }
     document.querySelector('#play-daily').onclick=()=>playDaily(ThreadDaily.today());
     addEventListener('visibilitychange',()=>{if(!document.hidden && ThreadDaily.today()!==day)location.reload()});
