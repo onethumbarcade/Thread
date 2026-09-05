@@ -32,6 +32,7 @@ async function boot() {
   }
   globalThis.ThreadNative = {
     isNative: true,
+    ready: false,
     navigate,
     shareUrl: sharedTrackUrl,
     async back() {
@@ -98,6 +99,7 @@ async function boot() {
   dispatchEvent(new CustomEvent('thread:app-state', { detail: { isActive } }));
   await storage.flush();
   await SplashScreen.hide();
+  globalThis.ThreadNative.ready = true;
 }
 
 boot().catch(async () => {

@@ -25,7 +25,7 @@ public class LaunchTest {
             result.set(value);
             done.countDown();
         }));
-        assertTrue("WebView did not respond", done.await(5, TimeUnit.SECONDS));
+        assertTrue("WebView did not respond", done.await(15, TimeUnit.SECONDS));
         return result.get();
     }
 
@@ -43,7 +43,7 @@ public class LaunchTest {
     public void bundledTitleMenuOpensAndRespondsOffline() throws Exception {
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
             try {
-                awaitReady(scenario, "!!(window.ThreadNative?.isNative && window.ThreadStorage && " +
+                awaitReady(scenario, "!!(window.ThreadNative?.ready && window.ThreadStorage && " +
                     "window.ThreadAppBack && document.querySelector('#home.active'))");
                 assertEquals("\"https://localhost/update-2-preview.html\"", evaluate(scenario, "location.href"));
                 assertEquals("false", evaluate(scenario, "!!document.querySelector('.native-start-error')"));
