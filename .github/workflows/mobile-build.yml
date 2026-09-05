@@ -27,9 +27,39 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run sync:mobile
+      - name: Reuse Android test signing key
+        uses: actions/cache@v4
+        with:
+          path: ~/.android/debug.keystore
+          key: thread-android-debug-signing-v1
       - name: Build Android test APK and unsigned release bundle
         working-directory: android
         run: bash gradlew --no-daemon assembleDebug bundleRelease
+      - name: Enable Android emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Verify installed app opens offline
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: |
+            adb shell svc wifi disable
+            adb shell svc data disable
+            bash android/gradlew -p android --no-daemon connectedDebugAndroidTest
+            adb pull /sdcard/Android/data/com.onethumbarcade.thread/files/launch.png android-launch.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: THREAD-Android-launch-check
+          path: |
+            android-launch.png
+            android/app/build/reports/androidTests/connected/debug/
+            android/app/build/outputs/androidTest-results/connected/debug/
       - uses: actions/upload-artifact@v4
         with:
           name: THREAD-Android-test

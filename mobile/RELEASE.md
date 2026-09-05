@@ -22,11 +22,18 @@
 The generated pages use a startup loader so no game or leaderboard code reads
 storage until native Preferences are available. The app opens the title menu
 through Capacitor's `server.appStartPath`.
+This path must start with `/`: Android appends it directly to the app origin.
+The bundle builder rejects a missing slash, and CI installs the app in an
+Android emulator with networking disabled to verify title-menu startup and
+navigation before publishing the test APK artifact.
 
 Android: Java 21, Android SDK 36, and Gradle wrapper 8.14.3. Run
 `bash gradlew assembleDebug bundleRelease` in `android/`. The debug APK is for
 installation testing; the release AAB remains unsigned until a release key is
 configured. Keep signing keys outside the repository.
+CI caches its test-only debug key so subsequent test builds can update an
+installation. Version 0.1.0 used an ephemeral key; uninstall that initial test
+version before installing 0.1.1. Release signing remains separate.
 
 iOS: macOS and Xcode 26 or later. Open `ios/App/App.xcodeproj`, select the Apple
 developer team, and build to a registered iPhone or archive for TestFlight.

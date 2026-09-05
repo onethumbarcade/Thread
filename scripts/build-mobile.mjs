@@ -4,6 +4,14 @@ import path from 'node:path';
 import { build } from 'esbuild';
 
 const root = fileURLToPath(new URL('../', import.meta.url)), out = path.join(root, 'dist');
+// Android appends this path directly to the origin; a missing slash becomes
+// part of the hostname and fails before the native startup loader can run.
+const config = JSON.parse(await readFile(path.join(root, 'capacitor.config.json'), 'utf8'));
+const startPath = config.server?.appStartPath;
+if (typeof startPath !== 'string' || !/^\/(?!\/)/.test(startPath)) {
+  throw new Error('server.appStartPath must begin with a single /');
+}
+await stat(path.join(root, startPath));
 await rm(out, { recursive: true, force: true });
 await mkdir(path.join(out, 'assets/pages'), { recursive: true });
 await cp(path.join(root, 'assets'), path.join(out, 'assets'), { recursive: true });
