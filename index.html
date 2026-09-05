@@ -759,6 +759,7 @@
     <script>
       const GAP = 86,
         TAU = Math.PI * 2,
+        TRIANGLE_REACH = 0.56,
         STAGE = 20000,
         LASERS = [
           ["#55f7d5", "#2affdf"],
@@ -1182,11 +1183,12 @@
           ctx.lineTo(x - a, y);
           ctx.closePath();
         } else {
-          const a = r * 0.76 * z,
-            b = r * 1.16;
-          ctx.moveTo(x, y - b);
-          ctx.lineTo(x + a, y + b);
-          ctx.lineTo(x - a, y + b);
+          // Equal sides, centered on the dot; the centroid's half-width is reach.
+          const halfWidth = r * TRIANGLE_REACH * 1.5 * z,
+            height = Math.sqrt(3) * halfWidth;
+          ctx.moveTo(x, y - height * 2 / 3);
+          ctx.lineTo(x + halfWidth, y + height / 3);
+          ctx.lineTo(x - halfWidth, y + height / 3);
           ctx.closePath();
         }
       }
@@ -1219,7 +1221,7 @@
           stage = Math.floor(g.score / STAGE) + 1,
           s = g.shapeSequence ? g.shapeSequence[(stage - 1) % g.shapeSequence.length] : (stage - 1 + (g.shapeOffset || 0)) % 4,
           z = Math.max(0.74, 1 - (stage - 1) * 0.024),
-          sw = [1, 0.92, 0.68, 0.56][s] * z,
+          sw = [1, 0.92, 0.68, TRIANGLE_REACH][s] * z,
           laser = LASERS[(stage - 1) % 5];
         hud.style.setProperty("--laser", laser[0]);
         hud.style.setProperty("--laser-soft", laser[0] + "24");
