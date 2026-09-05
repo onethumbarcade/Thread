@@ -50,7 +50,7 @@ jobs:
           script: |
             adb shell svc wifi disable
             adb shell svc data disable
-            bash android/gradlew -p android --no-daemon connectedDebugAndroidTest
+            bash android/gradlew -p android --no-daemon :app:connectedDebugAndroidTest
             adb pull /sdcard/Android/data/com.onethumbarcade.thread/files/launch.png android-launch.png
       - uses: actions/upload-artifact@v4
         if: always()
