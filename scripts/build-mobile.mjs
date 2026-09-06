@@ -42,6 +42,8 @@ for (const [file, page] of [['index.html', 'game'], ['update-2-preview.html', 'm
     .replace('</body>', '<script type="module" src="assets/native-shell.js"></script>\n</body>');
   await writeFile(path.join(out, file), safeInsets(html));
 }
+// Native playback uses lossless FLAC for a clean loop boundary.
+await stat(path.join(out, 'assets/thread-menu.flac'));
 await stat(path.join(out, 'assets/thread-menu.mp3'));
 await writeFile(path.join(out, 'assets/mobile.css'), safeInsets(await readFile(path.join(root, 'mobile/mobile.css'), 'utf8')));
 await build({ entryPoints: [path.join(root, 'mobile/bootstrap.mjs')],

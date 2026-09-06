@@ -1,9 +1,9 @@
-"""Render THREAD's original 'Neon Drift' menu theme. Requires NumPy, SciPy and ffmpeg.
-
-90 BPM, D major / B minor, 32 bars, 85 1/3 seconds. All instruments are
-synthesized here; no recordings or third-party musical samples are used.
-The circular mix wraps instrument releases and echoes for a continuous loop.
-Usage: python3 scripts/render-menu-theme.py /path/to/output.mp3
+"""Render Stillwater, an original chill menu theme for THREAD.
+68 BPM, Eb major / C minor, 32 bars (112.94 seconds). Soft felt electric keys,
+long warm pads, a sparse half-time brushed beat, and a mellow answering phrase.
+Synthesized from scratch without samples. All releases and echoes wrap into
+one continuous lossless loop; MP3 is provided as the lightweight listening copy.
+Usage: python3 scripts/render-menu-theme.py /path/to/thread-menu.mp3
 """
 from pathlib import Path
 import subprocess
@@ -14,11 +14,11 @@ import numpy as np
 from scipy.io import wavfile
 from scipy.signal import butter, sosfilt
 
-SR = 44100
-BEAT = 60 / 90
+SR = 32000
+BEAT = 60 / 68
 BARS = 32
 LENGTH = round(BARS * 4 * BEAT * SR)
-rng = np.random.default_rng(902106)
+rng = np.random.default_rng(680906)
 buses = {name: np.zeros((LENGTH, 2), dtype=np.float32)
          for name in ['pad', 'keys', 'lead', 'bass', 'drums', 'air']}
 
@@ -50,10 +50,10 @@ def add(bus, signal, beat, gain=1, pan=0):
 def piano(note, duration, velocity=1):
     t = time(duration)
     phase = 2 * np.pi * hz(note) * t
-    body = np.sin(phase + .8 * np.exp(-t * 3.8) * np.sin(2 * phase))
-    body += .19 * np.sin(2.003 * phase) * np.exp(-t * 4)
-    body += .07 * np.sin(3 * phase) * np.exp(-t * 7)
-    return body * np.exp(-t * 1.65) * envelope(t, duration, .008, .25) * velocity
+    body = np.sin(phase + .22 * np.exp(-t * 2.8) * np.sin(2 * phase))
+    body += .065 * np.sin(2.003 * phase) * np.exp(-t * 4)
+    body += .014 * np.sin(3 * phase) * np.exp(-t * 7)
+    return body * np.exp(-t * .85) * envelope(t, duration, .026, .8) * velocity
 
 
 def pad(chord, duration):
@@ -65,7 +65,7 @@ def pad(chord, duration):
             phase = 2 * np.pi * f * t + i * .72
             tone = np.sin(phase) + .16 * np.sin(2 * phase) + .06 * np.sin(3 * phase)
             out[:, side] += tone * (1 + .035 * np.sin(t * 2 * np.pi * .22 + i))
-    return out / len(chord) * envelope(t, duration, .6, 1.6)[:, None]
+    return out / len(chord) * envelope(t, duration, 1.2, 2.7)[:, None]
 
 
 def bass(note, duration):
@@ -100,74 +100,61 @@ def hat(opened=False):
     return noise * np.exp(-t * (19 if opened else 65)) * np.minimum(t / .002, 1)
 
 
-# Two bars per harmony: Dmaj9, Bm9, Gmaj9, A6/9. Inversions keep the upper voices close.
-chords = [[62, 66, 69, 73, 76], [59, 62, 66, 69, 73],
-          [59, 62, 66, 69, 74], [61, 64, 66, 69, 71]]
-roots = [38, 35, 31, 33]
-# An original eight-bar phrase, answered an octave lower in the quiet middle section.
-melody = [[(0.5, 78, 1), (2, 76, .7), (3, 73, 1.2)],
-          [(1, 69, 1), (2.5, 73, .8)],
-          [(.5, 73, .8), (2, 74, .7), (3, 78, 1.3)],
-          [(1, 76, 1.6)],
-          [(.5, 74, 1), (2, 71, .9), (3.5, 69, .7)],
-          [(1, 66, 1.1), (2.5, 69, 1)],
-          [(.5, 71, 1), (2, 73, .7), (3, 76, 1)],
-          [(1, 73, 1), (2.5, 69, 1.2)]]
-
+# Two-bar chords with close voice leading: Ebmaj9, Cm9, Abmaj9, Bb13sus.
+chords = [[55, 58, 62, 65, 67], [55, 58, 62, 63, 67],
+          [55, 58, 60, 63, 67], [53, 56, 60, 63, 67]]
+roots = [39, 36, 32, 34]
+# Sparse long notes leave breathing room between the harmonies.
+phrase = {0: [(1.25, 70, 1.7)], 2: [(2.5, 67, 2.0)],
+          4: [(.75, 65, 1.6), (3.2, 63, 1.4)], 7: [(1.2, 65, 2.1)]}
 for bar in range(BARS):
-    block, section = (bar // 2) % 4, bar // 8
-    chord, root = chords[block], roots[block]
-    at = bar * 4
+    chord, root = chords[(bar // 2) % 4], roots[(bar // 2) % 4]
+    at, section = bar * 4, bar // 8
     if bar % 2 == 0:
-        add('pad', pad([n - 12 for n in chord] + chord[2:], 8 * BEAT + 1.5), at, .19)
-    # Slightly swung, sparse electric-piano harmony.
-    for off, velocity in [(0, .9), (1.75, .48), (3.25, .65)]:
+        add('pad', pad(chord + [chord[0] - 12], 8 * BEAT + 2.8), at, .31)
         for i, note in enumerate(chord):
-            add('keys', piano(note, 2.4), at + off + i * .008,
-                .056 * velocity * (.9 if section == 2 else 1), (i - 2) * .16)
-    for off, note, duration in [(0, root, .8), (1.5, root, .6), (2.75, root + 12, .55)]:
-        add('bass', bass(note, duration * BEAT), at + off, .18 if section != 2 else .135)
+            add('keys', piano(note, 6.5), at + .035 + i * .015, .063, (i - 2) * .2)
+        add('bass', bass(root, 5.9), at + .025, .135)
+    else:
+        # A quiet upper-voice answer, never a repeated fast arpeggio.
+        for i, note in enumerate(chord[2:]):
+            add('keys', piano(note, 4.8), at + 1.55 + i * .035, .025, .15 + i * .15)
     if section != 2 or bar % 2 == 0:
-        add('drums', kick(), at, .21)
-    if section != 2:
-        add('drums', kick(), at + 2.5, .13)
-    add('drums', snare(), at + 2.018, .1 if section != 2 else .055, -.08)
-    for step in range(8):
-        if section == 2 and step % 2 == 0:
-            continue
-        add('drums', hat(step == 7 and bar % 2 == 1), at + step * .5 + (.035 if step % 2 else 0),
-            .022 * (1 if step % 2 else .66), .28 if step % 2 else -.22)
-    if section in [1, 3] or bar % 2 == 0:
-        for off, note, length in melody[bar % 8]:
-            add('lead', lead(note - (12 if section == 2 else 0), length * BEAT + .45),
-                at + off, .078 if section != 2 else .052, -.08)
-    if section == 3:
-        for i, off in enumerate([.75, 2.25, 3.5]):
-            add('air', piano(chord[(i + bar) % len(chord)] + 12, 2), at + off, .021, [-.5, .5, .15][i])
+        add('drums', kick(), at + .025, .10)
+    if bar % 4 == 3 and section != 2:
+        add('drums', kick(), at + 3.35, .041)
+    add('drums', snare(), at + 2.07, .032 if section != 2 else .017, -.18)
+    for off, vol, pan in [(.6, .010, -.28), (1.65, .013, .28), (3.65, .009, .14)]:
+        if section != 2 or off == 1.65:
+            add('drums', hat(), at + off, vol, pan)
+    if section in [1, 3]:
+        for off, note, duration in phrase.get(bar % 8, []):
+            add('lead', piano(note, duration * BEAT + 2.4), at + off,
+                .039 if section == 1 else .032, -.22)
 
-# Low, filtered stereo echoes and a diffuse late tail, wrapped onto the loop start.
-for bus, wet in [('keys', .23), ('lead', .27), ('air', .26), ('pad', .09)]:
-    dry = buses[bus].copy()
-    filtered = sosfilt(butter(2, 3100, fs=SR, output='sos'), dry, axis=0)
+# Diffuse warm stereo space. Every tail wraps, including the last chord.
+for bus, wet in [('keys', .28), ('lead', .31), ('pad', .13)]:
+    filtered = sosfilt(butter(2, 2300, fs=SR, output='sos'), buses[bus], axis=0)
     for n in range(1, 5):
         echo = np.roll(filtered, round(.75 * BEAT * n * SR), axis=0)
-        if n % 2:
-            echo = echo[:, ::-1]
-        buses[bus] += echo * wet * .48 ** (n - 1)
-    for n, delay in enumerate([.071, .113, .173, .257, .389, .541, .773, 1.031]):
-        buses[bus] += np.roll(filtered, round(delay * SR), axis=0)[:, ::-1] * .017 * .8 ** n
-
+        buses[bus] += echo[:, ::-1] * wet * .48 ** (n - 1)
+    for n, delay in enumerate([.097, .173, .283, .419, .613, .827, 1.133, 1.573]):
+        buses[bus] += np.roll(filtered, round(delay * SR), axis=0)[:, ::-1] * .045 * .84 ** n
 mix = sum(buses.values())
-mix = sosfilt(butter(2, 25, fs=SR, btype='highpass', output='sos'), np.tile(mix, (2, 1)), axis=0)[LENGTH:]
-mix = np.tanh(mix * 1.25)
-mix *= .84 / np.max(np.abs(mix))
+# Filter a repeated cycle and retain its settled second pass, preserving the seam.
+filters = butter(2, [28, 5200], fs=SR, btype='bandpass', output='sos')
+mix = sosfilt(filters, np.tile(mix, (2, 1)), axis=0)[LENGTH:]
+mix = np.tanh(mix * 1.1)
+mix *= .73 / np.max(np.abs(mix))
 output = Path(sys.argv[1] if len(sys.argv) > 1 else 'assets/thread-menu.mp3')
 output.parent.mkdir(parents=True, exist_ok=True)
-with tempfile.TemporaryDirectory() as folder:
-    wave = Path(folder) / 'neon-drift.wav'
-    wavfile.write(wave, SR, np.round(mix * 32767).astype(np.int16))
-    subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', str(wave),
-                    '-c:a', 'libmp3lame', '-b:a', '160k', '-metadata', 'title=Neon Drift',
-                    '-metadata', 'artist=One Thumb Arcade', '-metadata', 'album=THREAD',
-                    str(output)], check=True)
-print(f'{output}: {LENGTH / SR:.3f}s, peak {np.max(np.abs(mix)):.3f}, RMS {np.sqrt(np.mean(mix ** 2)):.3f}')
+wave = output.with_suffix('.wav')
+wavfile.write(wave, SR, np.round(mix * 32767).astype(np.int16))
+subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', str(wave),
+                '-c:a', 'libmp3lame', '-b:a', '160k', '-metadata', 'title=Stillwater',
+                '-metadata', 'artist=One Thumb Arcade', '-metadata', 'album=THREAD',
+                str(output)], check=True)
+subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-i', str(wave),
+                '-compression_level', '12', str(output.with_suffix('.flac'))], check=True)
+wave.unlink()
+print(f'{output}: {LENGTH / SR:.3f}s, peak {np.max(np.abs(mix)):.3f}, RMS {np.sqrt(np.mean(mix ** 2)):.3f}, loop seam delta {np.max(np.abs(mix[-1]-mix[0])):.6f}')

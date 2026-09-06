@@ -756,8 +756,9 @@
       id="menu-bgm"
       loop
       preload="auto"
-      src="assets/thread-menu.mp3?v=neon-drift-1"
+      src="assets/thread-menu.mp3?v=stillwater-1"
     ></audio>
+    <script src="assets/menu-music.js?v=continuous-1"></script>
     <script src="assets/menu-panels.js?v=track-options-1"></script>
     <script src="assets/track-sharing.js?v=native-app-1"></script>
     <script src="assets/daily-tracks.js?v=pacific-midnight-1"></script>
@@ -802,7 +803,7 @@
         startBest = document.querySelector("#start-best"),
         resultBest = document.querySelector("#result-best"),
         newBest = document.querySelector("#new-best"),
-        menuBgm = document.querySelector("#menu-bgm");
+        menuBgm = ThreadMenuMusic.create(document.querySelector("#menu-bgm"));
       let game,
         started = false,
         pointer = false,
@@ -1029,9 +1030,8 @@
         menuBgm.pause();
       }
       function startMenuMusic() {
-        stopMenuMusic();
-        if (!appActive || !settings.music || (started && game?.running && !gamePaused)) return;
-        menuBgm.volume = 0.34;
+        if (!appActive || !settings.music || (started && game?.running && !gamePaused)) { stopMenuMusic(); return; }
+        menuBgm.volume = 0.42;
         menuBgm.play().catch(() => {});
       }
       function startMusic() {
@@ -1154,7 +1154,7 @@
         } else if (!game?.running || gamePaused) startMenuMusic();
       }
       addEventListener("thread:app-state", event => appState(event.detail.isActive));
-      addEventListener("visibilitychange", () => appState(!document.hidden));
+      addEventListener("visibilitychange", () => { if (!globalThis.ThreadNative?.isNative) appState(!document.hidden); });
       document.querySelector("#pause-game").onclick = pauseGame;
       document.querySelector("#resume-game").onclick = resumeGame;
       document.querySelector("#pause-home").onclick = () => document.querySelector("#home-button").click();
@@ -1213,7 +1213,6 @@
       document.querySelector("#again").onclick = begin;
       document.querySelector("#home-button").onclick = () => {
         stopMusic();
-        stopMenuMusic();
         ThreadTracks.navigate("update-2-preview.html");
       };
       document.querySelector("#share-score").onclick = async () => {
@@ -1309,7 +1308,7 @@
         },
         { once: true },
       );
-      startMenuMusic();
+      if (!runParams.has("mode")) startMenuMusic();
       function move(x) {
         if (!pointer || !game?.running || gamePaused || !appActive) return;
         const r = Math.min(width * 0.4, 190);

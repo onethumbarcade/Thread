@@ -1,5 +1,12 @@
 # Mobile conversion
 
+## Version 0.1.12
+
+- Replace the menu theme with Stillwater: a slower, spacious original chill track.
+- Keep one native audio player through summary, Home, leaderboards, and all card navigation.
+- Pause without rewinding for gameplay, mute, and backgrounding; resume from that position.
+- Bundle a lossless loop without encoder padding at the song boundary.
+
 ## Version 0.1.11
 
 - Add Neon Drift, an original mellow electronic theme, to all menu, pause, and result cards.

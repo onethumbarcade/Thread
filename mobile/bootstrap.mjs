@@ -1,4 +1,4 @@
-import { Capacitor, CapacitorHttp } from '@capacitor/core';
+import { Capacitor, CapacitorHttp, registerPlugin } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { Preferences } from '@capacitor/preferences';
 import { Share } from '@capacitor/share';
@@ -32,6 +32,7 @@ async function boot() {
   }
   globalThis.ThreadNative = {
     isNative: true,
+    menuMusic: registerPlugin('ThreadMenuMusic'),
     ready: false,
     navigate,
     shareUrl: sharedTrackUrl,

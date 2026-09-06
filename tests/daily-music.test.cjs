@@ -25,6 +25,19 @@ test('card theme plays while paused, honors mute and backgrounding, and stops be
   assert.equal(theme.paused, true);
   assert.equal(run.storage.get('thread-daily-attempts-2'), '1');
 });
+test('repeated card interactions and Home never pause or rewind the menu song', () => {
+  const run = game('?mode=daily&track=2');
+  run.get('#pause-game').click();
+  const theme = run.get('#menu-bgm');
+  theme.currentTime = 37.25;
+  const pauses = theme.pauses;
+  vm.runInContext('startMenuMusic();startMenuMusic()', run.context);
+  assert.equal(theme.pauses, pauses);
+  assert.equal(theme.currentTime, 37.25);
+  run.get('#home-button').click();
+  assert.equal(theme.pauses, pauses);
+});
+
 const param = () => ({ value: 0,
   setValueAtTime(value, time) { assert(Number.isFinite(value) && time >= 0); },
   linearRampToValueAtTime(value, time) { assert(Number.isFinite(value) && time >= 0); },

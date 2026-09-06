@@ -58,6 +58,62 @@ public class LaunchTest {
             "true", evaluate(scenario, script));
     }
 
+    private JSONObject musicState(ActivityScenario<MainActivity> scenario) throws Exception {
+        evaluate(scenario, "window.musicSnapshot=null;ThreadNative.menuMusic.getState().then(s=>window.musicSnapshot=s)");
+        awaitReady(scenario, "!!window.musicSnapshot");
+        String encoded = evaluate(scenario, "JSON.stringify(window.musicSnapshot)");
+        return new JSONObject(new JSONArray("[" + encoded + "]").getString(0));
+    }
+
+    @Test
+    public void cardMusicSurvivesSummaryHomeAndLeaderboardNavigation() throws Exception {
+        try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+            awaitReady(scenario, "!!window.ThreadNative?.ready");
+            evaluate(scenario, "ThreadStorage.setItem('thread-settings',JSON.stringify({music:true,sfx:false,haptics:false}));ThreadNative.navigate('update-2-preview.html')");
+            awaitReady(scenario, "!!(window.ThreadNative?.ready && document.querySelector('#home.active') && settings.music)");
+            assertTrue(musicState(scenario).getBoolean("playing"));
+            SystemClock.sleep(1400);
+            JSONObject home = musicState(scenario);
+            evaluate(scenario, "show('options');show('scoring');show('home')");
+            JSONObject cards = musicState(scenario);
+            assertEquals(home.getInt("pauses"), cards.getInt("pauses"));
+            assertEquals(home.getInt("preparations"), cards.getInt("preparations"));
+            evaluate(scenario, "ThreadNative.navigate('index.html?mode=generated&seed=CHILL2026')");
+            awaitReady(scenario, "!!(window.ThreadNative?.ready && window.frame && game?.running)");
+            assertEquals(false, musicState(scenario).getBoolean("playing"));
+            evaluate(scenario, "game.energy=0;game.ringOffset=width*2");
+            awaitReady(scenario, "!!(window.ThreadNative?.ready && !game.running && !document.querySelector('#result').classList.contains('hidden'))");
+            JSONObject summary = musicState(scenario);
+            assertTrue(summary.getBoolean("playing"));
+            assertTrue(summary.getInt("position") >= home.getInt("position"));
+            evaluate(scenario, "document.querySelector('#home-button').click()");
+            awaitReady(scenario, "!!(window.ThreadNative?.ready && document.querySelector('#home.active'))");
+            JSONObject returned = musicState(scenario);
+            assertTrue(returned.getBoolean("playing"));
+            assertEquals("Home must not pause card music", summary.getInt("pauses"), returned.getInt("pauses"));
+            assertEquals("Home must retain the player", summary.getInt("preparations"), returned.getInt("preparations"));
+            assertTrue("Home must not rewind the song", returned.getInt("position") >= summary.getInt("position"));
+            evaluate(scenario, "show('leaderboard');show('archive');show('home')");
+            JSONObject browsed = musicState(scenario);
+            assertEquals(returned.getInt("pauses"), browsed.getInt("pauses"));
+            evaluate(scenario, "document.querySelector('[data-setting=music]').click()");
+            JSONObject muted = musicState(scenario);
+            assertEquals(false, muted.getBoolean("playing"));
+            SystemClock.sleep(400);
+            assertEquals(muted.getInt("position"), musicState(scenario).getInt("position"));
+            evaluate(scenario, "document.querySelector('[data-setting=music]').click()");
+            assertTrue(musicState(scenario).getBoolean("playing"));
+            scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED);
+            SystemClock.sleep(300);
+            scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED);
+            awaitReady(scenario, "!!window.ThreadNative?.ready");
+            JSONObject resumed = musicState(scenario);
+            assertTrue(resumed.getBoolean("playing"));
+            assertEquals(home.getInt("preparations"), resumed.getInt("preparations"));
+            assertTrue(resumed.getInt("position") >= muted.getInt("position"));
+        }
+    }
+
     @Test
     public void gameplayRenderingAndTouchWorkOffline() throws Exception {
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
