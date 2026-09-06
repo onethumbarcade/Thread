@@ -1083,6 +1083,13 @@
         }, completedResult);
         if (completedResult) document.querySelector("#result-board-link").href = ThreadResultNavigation.leaderboardUrl(completedResult);
       }
+      function formatResultRanking(data) {
+        if (!data.yours) return "Play again to post your first ranked score.";
+        const leader = data.entries?.find(entry => entry.rank === 1);
+        const globalBest = Number.isSafeInteger(leader?.score) && leader.score >= 0
+          ? leader.score.toLocaleString() : "—";
+        return `DAILY RANK #${data.yours.rank} · GLOBAL BEST ${globalBest}`;
+      }
       async function refreshResultRanking() {
         const finishedGame = game;
         if (!completedResult || !globalThis.ThreadLeaderboard?.board) return;
@@ -1090,9 +1097,7 @@
           await ThreadLeaderboard.flush();
           const data = await ThreadLeaderboard.board("daily", Number(runTrack));
           if (game !== finishedGame || game.running) return;
-          document.querySelector("#result-ranking").textContent = data.yours
-            ? `DAILY RANK #${data.yours.rank} · GLOBAL BEST ${data.yours.score.toLocaleString()}`
-            : "Play again to post your first ranked score.";
+          document.querySelector("#result-ranking").textContent = formatResultRanking(data);
           rememberResult();
         } catch {}
       }
@@ -1521,9 +1526,7 @@
                 score: runScore, distance: g.distance, duration: g.elapsed,
               }).then(data => {
                 if (rankedSession !== finishedSession) return;
-                rankingStatus.textContent = data.yours
-                  ? `DAILY RANK #${data.yours.rank} · GLOBAL BEST ${data.yours.score.toLocaleString()}`
-                  : "Play again to post your first ranked score.";
+                rankingStatus.textContent = formatResultRanking(data);
                 rememberResult();
               }).catch(error => {
                 if (rankedSession === finishedSession) {

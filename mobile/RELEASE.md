@@ -1,5 +1,10 @@
 # Mobile conversion
 
+## Version 0.1.5
+
+- Show the daily track leader’s score as Global Best in the post-game summary.
+- Keep personal rank separate and refresh the correct global best when returning from the leaderboard.
+
 ## Version 0.1.4
 
 - Add equal-width Refresh and Play Track actions to the leaderboard.

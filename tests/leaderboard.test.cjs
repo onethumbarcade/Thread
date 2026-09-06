@@ -105,3 +105,22 @@ test('failed loads never fall back to unrelated device scores or erase a known g
   await c.api.loadBests(1,2);fail=true;
   await assert.rejects(c.api.loadBests(1,2));assert.equal(c.api.bestFor(1),49964);
 });
+
+test('result global best is the track leader, independent of personal best or placement', async () => {
+  const cases = [
+    { entries: [{rank:1,score:47433},{rank:2,score:44610}], yours: {rank:2,score:44610}, expected: 'DAILY RANK #2 · GLOBAL BEST 47,433' },
+    { entries: [{rank:1,score:47433,isYou:true}], yours: {rank:1,score:47433}, expected: 'DAILY RANK #1 · GLOBAL BEST 47,433' },
+    { entries: [{rank:1,score:47433},{rank:1,score:47433,isYou:true}], yours: {rank:1,score:47433}, expected: 'DAILY RANK #1 · GLOBAL BEST 47,433' },
+    { entries: [{rank:1,score:47433}], yours: {rank:75,score:44610}, expected: 'DAILY RANK #75 · GLOBAL BEST 47,433' },
+    { entries: [], yours: {rank:2,score:44610}, expected: 'DAILY RANK #2 · GLOBAL BEST —' },
+    { entries: [], yours: null, expected: 'Play again to post your first ranked score.' },
+  ];
+  for (const { expected, ...board } of cases) {
+    const leaderboard = {startRun(){return {};},async finishRun(){return board;}};
+    const g = game('?mode=daily&track=2', {}, 844, {leaderboard});
+    vm.runInContext('game.score=44610;game.energy=.01;game.ringOffset=10000', g.context);
+    g.step(); await flushTasks();
+    assert.equal(g.get('#result-ranking').textContent, expected);
+    assert.equal(g.history.state.threadResult.ranking, expected);
+  }
+});

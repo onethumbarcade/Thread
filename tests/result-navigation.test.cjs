@@ -11,7 +11,7 @@ function ranked() {
   const calls = { starts: [], finishes: [] };
   return { calls, api: {
     startRun(track) { calls.starts.push(track); return { track }; },
-    async finishRun(session, result) { calls.finishes.push(result); return { yours: { rank: 3, score: 501 } }; },
+    async finishRun(session, result) { calls.finishes.push(result); return { entries: [{ rank: 1, score: 1200 }], yours: { rank: 3, score: 501 } }; },
   } };
 }
 async function completed(options = {}) {
@@ -24,7 +24,7 @@ async function completed(options = {}) {
 test('a discarded game page restores the same summary without starting or submitting another run', async () => {
   const first = await completed();
   const record = first.history.state.threadResult;
-  assert.equal(record.ranking, 'DAILY RANK #3 · GLOBAL BEST 501');
+  assert.equal(record.ranking, 'DAILY RANK #3 · GLOBAL BEST 1,200');
   for (const via of ['history', 'link']) {
     const rank = ranked();
     const restored = game('?mode=daily&track=2' + (via === 'link' ? '&result=' + record.id : ''), {}, 844, {
@@ -105,8 +105,8 @@ test('restored summary refreshes ranking without submitting and ignores late rep
     history: first.history, session: first.session, leaderboard: rank.api,
   });
   await tick();
-  resolve({ yours: { rank: 4, score: 501 } }); await tick();
-  assert.match(restored.get('#result-ranking').textContent, /DAILY RANK #4/);
+  resolve({ entries: [{ rank: 1, score: 1500 }], yours: { rank: 4, score: 501 } }); await tick();
+  assert.equal(restored.get('#result-ranking').textContent, 'DAILY RANK #4 · GLOBAL BEST 1,500');
   assert.equal(restored.history.state.threadResult.ranking, restored.get('#result-ranking').textContent);
   for (const listener of restored.listeners.get('pageshow')) listener({ persisted: true });
   await tick(); restored.get('#again').click();
