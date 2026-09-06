@@ -114,6 +114,9 @@ public class LaunchTest {
                     "return headers.map(x=>x.textContent).join('|')==='Rank|Threader ID|Score' && " +
                     "row.children[1].textContent==='C826221469A5' && " +
                     "headers.every((h,i)=>Math.abs(h.getBoundingClientRect().left-row.children[i].getBoundingClientRect().left)<2);})()"));
+                evaluate(scenario, "document.querySelector('#board-track-select').value='1';" +
+                    "document.querySelector('#board-track-select').onchange()");
+                assertEquals("true", evaluate(scenario, "document.querySelector('#board-play').getAttribute('href')==='index.html?mode=daily&track=1'"));
                 screenshot("thread-leaderboard.png");
                 evaluate(scenario, "show('home')");
                 evaluate(scenario, "document.querySelector('#home [data-go=generate]').click()");

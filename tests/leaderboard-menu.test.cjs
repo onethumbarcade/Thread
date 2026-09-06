@@ -41,7 +41,9 @@ test('today, archive, and leaderboard show the same server best while device rec
   assert.equal(m.get('daily-best').textContent,'47,433');
   assert.equal(m.get('archive-1').textContent,'49,964');
   assert.equal(m.get('archive-2').textContent,'47,433');
-  m.get('board-track-select').value='1';m.get('board-track-select').onchange();await tick();
+  m.get('board-track-select').value='1';m.get('board-track-select').onchange();
+  assert.equal(m.get('board-play').href,'index.html?mode=daily&track=1','Play follows the selection immediately, before rankings finish loading');
+  await tick();
   assert.equal(m.get('board-entries').children[0].children[2].textContent,m.get('archive-1').textContent);
   assert.equal(m.get('board-yours').hidden,true);
   assert.equal(m.storage.get('thread-daily-1'),'56392');
@@ -77,8 +79,11 @@ test('rankings show YOU and game IDs even when a cached response contains legacy
 test('one leaderboard per track opens today, switches to archive records, and honors track links',async()=>{
   const m=menu();await tick();m.context.ThreadLeaderboardMenu.open('leaderboard');await tick();
   assert.equal(Number(m.get('board-track-select').value),2);
+  assert.equal(m.get('board-play').href,'index.html?mode=daily&track=2');
   assert.equal(m.get('board-entries').children[0].children[2].textContent,'47,433');
-  m.get('board-track-select').value='1';m.get('board-track-select').onchange();await tick();
+  m.get('board-track-select').value='1';m.get('board-track-select').onchange();
+  assert.equal(m.get('board-play').href,'index.html?mode=daily&track=1','Play follows the selection immediately, before rankings finish loading');
+  await tick();
   assert.equal(m.get('board-entries').children[0].children[2].textContent,'49,964');
   m.setScore(60000);m.get('board-refresh').onclick();await tick();
   assert.equal(m.get('board-entries').children[0].children[2].textContent,'60,000');
@@ -88,6 +93,7 @@ test('one leaderboard per track opens today, switches to archive records, and ho
   ]);
   const linked=menu('?view=leaderboard&track=1');await tick();
   assert.equal(Number(linked.get('board-track-select').value),1);
+  assert.equal(linked.get('board-play').href,'index.html?mode=daily&track=1');
   assert.equal(linked.get('board-entries').children[0].children[2].textContent,'49,964');
 });
 
@@ -96,6 +102,7 @@ test('Back remembers the game summary across track switches and resets for home 
   const linked=menu('?view=leaderboard&track=2&from=result&result=finished-2', {back(id){calls.push(id);return true;}});
   await tick();
   linked.get('board-track-select').value='1';linked.get('board-track-select').onchange();await tick();
+  assert.equal(linked.get('board-play').href,'index.html?mode=daily&track=1','Play starts the selected track instead of restoring the finished run');
   linked.get('leaderboard-back').onclick();
   assert.deepEqual(calls,['finished-2']);
   linked.context.show('home');linked.context.show('leaderboard');

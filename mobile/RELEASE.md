@@ -1,5 +1,11 @@
 # Mobile conversion
 
+## Version 0.1.4
+
+- Add equal-width Refresh and Play Track actions to the leaderboard.
+- Play Track opens the selected daily or archived track, even while rankings load.
+- Native navigation saves pending local changes before opening the selected track.
+
 ## Version 0.1.3
 
 - Add aligned Rank, Threader ID, and Score headers; show bare public IDs and retain YOU.
