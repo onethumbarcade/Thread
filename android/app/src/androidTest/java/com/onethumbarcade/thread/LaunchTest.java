@@ -67,6 +67,57 @@ public class LaunchTest {
         return snapshot;
     }
 
+    private void tap(ActivityScenario<MainActivity> scenario, String selector) throws Exception {
+        String encoded = evaluate(scenario, "JSON.stringify((() => {const r=document.querySelector('" + selector +
+            "').getBoundingClientRect();return [r.left+r.width/2,r.top+r.height/2]})())");
+        JSONArray point = new JSONArray(new JSONArray("[" + encoded + "]").getString(0));
+        float cssX = (float) point.getDouble(0), cssY = (float) point.getDouble(1);
+        scenario.onActivity(activity -> {
+            android.webkit.WebView view = activity.getBridge().getWebView();
+            float x = cssX * view.getScale(), y = cssY * view.getScale();
+            long now = SystemClock.uptimeMillis();
+            android.view.MotionEvent down = android.view.MotionEvent.obtain(now, now, android.view.MotionEvent.ACTION_DOWN, x, y, 0);
+            android.view.MotionEvent up = android.view.MotionEvent.obtain(now, now + 60, android.view.MotionEvent.ACTION_UP, x, y, 0);
+            view.dispatchTouchEvent(down);
+            view.dispatchTouchEvent(up);
+            down.recycle(); up.recycle();
+        });
+    }
+
+    @Test
+    public void pauseButtonFreezesAndResumesGameplay() throws Exception {
+        try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+            awaitReady(scenario, "!!window.ThreadNative?.ready");
+            evaluate(scenario, "ThreadStorage.setItem('thread-settings',JSON.stringify({music:true,sfx:false,haptics:false}));" +
+                "ThreadNative.navigate('index.html?mode=generated&seed=PAUSE2026')");
+            awaitReady(scenario, "!!(window.ThreadNative?.ready && window.frame && game?.running)");
+            evaluate(scenario, "game.powerUps.star=120;game.powerUps.slow=10;game.powerUps.double=8;window.pauseSong=trackMusic");
+            assertEquals("true", evaluate(scenario, "(() => {const b=document.querySelector('#pause-game'),r=b.getBoundingClientRect();" +
+                "const level=document.querySelector('.level').getBoundingClientRect();" +
+                "return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2).closest('button')===b && " +
+                "r.width>=44 && r.height>=44 && Math.abs(level.left+level.width/2-innerWidth/2)<2;})()"));
+            tap(scenario, "#pause-game");
+            awaitReady(scenario, "gamePaused && audio.state==='suspended' && !document.querySelector('#pause').classList.contains('hidden')");
+            String snapshot = "JSON.stringify([game.score,game.distance,game.energy,game.elapsed,game.ringOffset,game.ringRadius," +
+                "game.powerUps.star,game.powerUps.slow,game.powerUps.double,game.effects,audio.currentTime])";
+            String paused = evaluate(scenario, snapshot);
+            SystemClock.sleep(700);
+            assertEquals("Pause must freeze gameplay, power-ups, effects and gameplay music", paused, evaluate(scenario, snapshot));
+            assertTrue("Pause is a card and should play the menu theme", musicState(scenario).getBoolean("playing"));
+            screenshot("thread-paused.png");
+            tap(scenario, "#resume-game");
+            awaitReady(scenario, "!gamePaused && audio.state==='running' && document.querySelector('#pause').classList.contains('hidden')");
+            assertEquals("true", evaluate(scenario, "trackMusic===window.pauseSong && musicStarted"));
+            assertEquals(false, musicState(scenario).getBoolean("playing"));
+            assertTrue("Continue must advance the original run", !paused.equals(evaluate(scenario, snapshot)));
+            tap(scenario, "#pause-game");
+            awaitReady(scenario, "gamePaused");
+            tap(scenario, "#pause-home");
+            awaitReady(scenario, "!!(window.ThreadNative?.ready && document.querySelector('#home.active'))");
+            assertTrue(musicState(scenario).getBoolean("playing"));
+        }
+    }
+
     @Test
     public void cardMusicSurvivesSummaryHomeAndLeaderboardNavigation() throws Exception {
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {

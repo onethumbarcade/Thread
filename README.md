@@ -25,5 +25,5 @@ The Mobile builds workflow also compiles an Android debug APK, an unsigned
 Android release bundle, and an iOS simulator app. It does not publish to stores
 or change the live browser version when run on the conversion branch.
 
-App ID: `com.onethumbarcade.thread`. Development version: `0.1.13` (build 14).
+App ID: `com.onethumbarcade.thread`. Development version: `0.1.14` (build 15).
 See [Mobile release notes](mobile/RELEASE.md) for platform and launch details.
