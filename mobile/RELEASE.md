@@ -45,9 +45,11 @@ Android: Java 21, Android SDK 36, and Gradle wrapper 8.14.3. Run
 `bash gradlew assembleDebug bundleRelease` in `android/`. The debug APK is for
 installation testing; the release AAB remains unsigned until a release key is
 configured. Keep signing keys outside the repository.
-CI caches its test-only debug key so subsequent test builds can update an
-installation. Version 0.1.0 used an ephemeral key; uninstall that initial test
-version before installing 0.1.1. Release signing remains separate.
+CI explicitly creates or restores its test-only key at THREAD_TEST_KEYSTORE,
+uses that path for debug signing, and saves the key before emulator diagnostics.
+Versions through 0.1.2 used ephemeral keys; uninstall the earlier test build before
+installing 0.1.3. This clears that installation's local records and player ID.
+Release signing remains separate.
 
 iOS: macOS and Xcode 26 or later. Open `ios/App/App.xcodeproj`, select the Apple
 developer team, and build to a registered iPhone or archive for TestFlight.

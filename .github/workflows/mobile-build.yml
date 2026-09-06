@@ -14,6 +14,8 @@ jobs:
   android:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    env:
+      THREAD_TEST_KEYSTORE: ${{ github.workspace }}/android/app/thread-test.keystore
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -31,8 +33,15 @@ jobs:
         id: test-signing
         uses: actions/cache/restore@v4
         with:
-          path: ~/.android/debug.keystore
-          key: thread-android-debug-signing-v1
+          path: ${{ env.THREAD_TEST_KEYSTORE }}
+          key: thread-android-debug-signing-v2
+      - name: Create a test signing key only when none was restored
+        shell: bash
+        run: |
+          if [ ! -f "$THREAD_TEST_KEYSTORE" ]; then
+            keytool -genkeypair -keystore "$THREAD_TEST_KEYSTORE" -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          test -s "$THREAD_TEST_KEYSTORE"
       - name: Build Android test APK and unsigned release bundle
         working-directory: android
         run: bash gradlew --no-daemon assembleDebug bundleRelease
@@ -40,8 +49,8 @@ jobs:
         if: steps.test-signing.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
-          path: ~/.android/debug.keystore
-          key: thread-android-debug-signing-v1
+          path: ${{ env.THREAD_TEST_KEYSTORE }}
+          key: thread-android-debug-signing-v2
       - uses: actions/upload-artifact@v4
         with:
           name: THREAD-Android-test
