@@ -21,7 +21,7 @@
     if (mode !== "daily" && /^[0-3]{6}$/.test(String(mix))) url.searchParams.set("powers", mix);
     if (mode !== "daily" && options && globalThis.ThreadTrackOptions) {
       const config = ThreadTrackOptions.normalize(options);
-      for (const key of ["powers", "shapes", "bonuses"]) url.searchParams.set(key, config[key]);
+      for (const key of ["powers", "shapes", "bonuses", "levelScore"]) url.searchParams.set(key, config[key]);
     }
     return url.href;
   }

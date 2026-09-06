@@ -92,7 +92,7 @@ test('daily gameplay uses its own item mix and stays identical across devices, r
     const b = game(`?mode=daily&track=${id}&powers=000000&bonuses=000&shapes=0`, {}, 1200, {
       width:768, storage:{'thread-track-options':JSON.stringify({shapes:'0',bonuses:'333',powers:'333333'})},
     });
-    assert.deepEqual(json(a,'runOptions'), JSON.parse(JSON.stringify(rules.options)));
+    assert.deepEqual(json(a,'runOptions'), { ...JSON.parse(JSON.stringify(rules.options)), levelScore: rules.levelScore });
     assert.deepEqual(json(b,'runOptions'), json(a,'runOptions'));
     const initial = json(a,'({nodes:game.nodes,pickups:game.pickups,bonuses:game.bonuses})');
     extend(a,113); extend(b,809);
