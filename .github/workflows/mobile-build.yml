@@ -73,13 +73,15 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
-          # Avoid emulator Vulkan/WebView compatibility crashes on the headless runner.
-          # https://developer.android.com/studio/run/emulator-troubleshooting#cannot-open-webpage
-          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
+          # Direct SwiftShader GLES disconnects the emulator during the canvas test.
+          # Use ANGLE over SwiftShader while retaining every installed-app check.
+          # https://developer.android.com/studio/run/emulator-acceleration
+          emulator-options: -no-window -gpu swangle -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
           script: |
             adb shell svc wifi disable
             adb shell svc data disable
             bash android/gradlew -p android --no-daemon :app:connectedDebugAndroidTest
+            adb pull /sdcard/Download/thread-paused.png android-paused.png
             adb pull /sdcard/Download/thread-leaderboard.png android-leaderboard.png
             adb pull /sdcard/Download/thread-previous-renderer.png android-previous-renderer.png
             adb pull /sdcard/Download/thread-cached-renderer.png android-cached-renderer.png
@@ -92,6 +94,7 @@ jobs:
           name: THREAD-Android-launch-check
           path: |
             android-launch.png
+            android-paused.png
             android-leaderboard.png
             android-previous-renderer.png
             android-cached-renderer.png
