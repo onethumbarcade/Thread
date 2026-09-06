@@ -1,0 +1,58 @@
+/* Achievements share THREAD's neon card palette and stay outside gameplay. */
+.progress-entry, .daily-streak { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; min-height:48px; margin-top:18px; padding:10px 14px; border:1px solid #8e91ff80; border-radius:15px; background:linear-gradient(110deg,#102037,#231439); color:#dbddff; font:800 13px Inter,system-ui,sans-serif; letter-spacing:1px; cursor:pointer; }
+.progress-entry b { color:#76f3ff; font-size:13px; white-space:nowrap; }
+.progress-entry svg, .daily-streak svg { width:25px; height:25px; flex:0 0 25px; color:#76f3ff; }
+.daily-streak { flex-wrap:wrap; gap:6px 9px; margin:15px 0 8px; border-color:#ffbd636b; color:#ffd88a; background:linear-gradient(110deg,#29203a,#171830); }
+.daily-streak svg { color:#ffd88a; }
+.daily-streak small { flex-basis:100%; color:#b9c9df; font-size:12px; font-weight:500; letter-spacing:0; }
+.progress-entry:focus-visible, .daily-streak:focus-visible, #result-achievements:focus-visible { outline:2px solid #76f3ff; outline-offset:4px; }
+#achievements .guide-title { max-width:calc(100% - 92px); padding:10px 12px; font-size:clamp(11px,3.3vw,16px); letter-spacing:1px; }
+.progress-intro { margin:0 0 18px; color:#b9c9df; font-size:14px; line-height:1.5; text-align:center; }
+.progress-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; }
+.progress-stat { display:flex; flex-direction:column; justify-content:space-between; gap:9px; padding:13px 5px; border:1px solid #45f0dd85; border-radius:14px; background:#07121fd9; text-align:center; }
+.progress-stat small { color:#9cafcd; font-size:10px; line-height:1.4; font-weight:850; letter-spacing:.5px; }
+.progress-stat b { color:#fff; font-size:16px; }
+.streak-note { color:#b9c9df; font-size:13px; line-height:1.5; text-align:center; margin:16px 0 23px; }
+.achievement-list { display:grid; gap:12px; }
+.achievement { display:grid; grid-template-columns:48px minmax(0,1fr); align-items:center; gap:12px; padding:17px 13px; border:1px solid #7189ad40; border-radius:18px; background:linear-gradient(125deg,#101b31,#111223); }
+.achievement.unlocked { border-color:#45f0ddaa; background:linear-gradient(125deg,#103333,#151331); box-shadow:0 0 17px #45f0dd15; }
+.achievement-icon { display:grid; place-items:center; width:48px; height:58px; color:#8396b5; background:#16213c; clip-path:polygon(50% 0,100% 24%,100% 76%,50% 100%,0 76%,0 24%); }
+.unlocked .achievement-icon { color:#76ffe7; background:#214348; }
+.achievement-icon svg { width:33px; height:33px; }
+.achievement-icon i { font-size:29px; font-style:normal; filter:grayscale(1); }
+.unlocked .achievement-icon i { filter:none; }
+.achievement-heading { display:flex; flex-wrap:wrap; align-items:baseline; justify-content:space-between; gap:5px; }
+.achievement-heading h3 { margin:0; font-size:15px; color:#f1f7ff; }
+.achievement-state { color:#8b9cba; font-size:9px; letter-spacing:.7px; font-weight:850; }
+.unlocked .achievement-state { color:#76ffe7; }
+.achievement-body p { margin:7px 0 11px; color:#aabdd9; font-size:12px; line-height:1.5; }
+.achievement-progress { display:block; appearance:none; width:100%; height:5px; border:none; border-radius:5px; background:#29324a; overflow:hidden; }
+.achievement-progress::-webkit-progress-bar { background:#29324a; border-radius:5px; }
+.achievement-progress::-webkit-progress-value { background:linear-gradient(90deg,#4decff,#d36fff); border-radius:5px; }
+.achievement-progress::-moz-progress-bar { background:linear-gradient(90deg,#4decff,#d36fff); border-radius:5px; }
+.achievement-count { display:block; color:#99accb; font-size:11px; margin-top:7px; }
+.progress-footnote { color:#8d9fbf; font-size:11px; line-height:1.5; margin:20px 0 0; text-align:center; }
+.progress-save-status { color:#ffc784; font-size:12px; line-height:1.5; text-align:center; }
+.progress-save-status:empty { display:none; }
+#result { touch-action:pan-y; overscroll-behavior:contain; }
+#result .run-progress { margin:18px 0 4px; text-align:center; }
+#result-progress-status { margin:0 0 6px; font-size:12px; color:#ffd58a; line-height:1.5; }
+#result-progress-status:empty { display:none; }
+#result #result-achievements { width:auto; min-height:44px; margin:0; padding:8px 12px; border:0; border-radius:10px; background:transparent; box-shadow:none; color:#76f3ff; font:750 13px Inter,system-ui,sans-serif; letter-spacing:.6px; }
+.milestone-banner { position:relative; isolation:isolate; margin:0 0 13px; padding:15px; border:1px solid #ffdc88b3; border-radius:17px; background:linear-gradient(120deg,#392341,#132c39); box-shadow:0 0 19px #ffb65c24; text-align:left; }
+.milestone-banner[hidden] { display:none; }
+.milestone-kicker { color:#ffd88a; font-size:10px; font-weight:900; letter-spacing:1.4px; text-align:center; margin-bottom:10px; }
+.milestone-row { display:flex; align-items:center; gap:12px; }
+.milestone-row + .milestone-row { margin-top:12px; padding-top:12px; border-top:1px solid #ffe6a32b; }
+.milestone-icon { display:grid; place-items:center; flex:0 0 34px; color:#ffdf8d; }
+.milestone-icon svg { width:32px; height:32px; }
+.milestone-icon i { font-style:normal; font-size:28px; }
+.milestone-copy { min-width:0; }
+.milestone-copy strong { display:block; color:#fff1c9; font-size:16px; line-height:1.25; }
+.milestone-copy small { display:block; margin-top:4px; color:#cad7ea; font-size:11px; line-height:1.5; }
+.milestone-banner.celebrate { animation:milestone-pop .65s ease-out both; }
+.milestone-banner.celebrate::before { content:''; position:absolute; z-index:-1; inset:-10px; border-radius:25px; border:2px solid #ffe396; opacity:0; pointer-events:none; animation:milestone-ring .85s ease-out; }
+@keyframes milestone-pop { from { transform:scale(.94); opacity:.4; } to { transform:scale(1); opacity:1; } }
+@keyframes milestone-ring { from { transform:scale(.92); opacity:.7; } to { transform:scale(1.08); opacity:0; } }
+.reduced-motion .milestone-banner.celebrate, .reduced-motion .milestone-banner.celebrate::before { animation:none; }
+@media(prefers-reduced-motion:reduce) { .milestone-banner.celebrate, .milestone-banner.celebrate::before { animation:none; } }

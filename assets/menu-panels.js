@@ -35,6 +35,15 @@
     <p class="note">Power-ups sit farther off the laser than fruit. Swerve to collect them, then return to the laser to keep scoring. Timed powers can overlap; collecting the same power refreshes its timer. Blasted bombs give no points.</p>
     <p class="note">Maximum scores come from precise centering, surviving higher speed multipliers and taking calculated risks for collectibles.</p>
   `,
+    achievements: `
+    <div class="guide-head"><button class="back" data-go="home" aria-label="Back">‹</button><div class="guide-title">ACHIEVEMENTS</div></div>
+    <p class="progress-intro">Every run adds to your story. Build your streak and collect your badges.</p>
+    <div class="progress-stats" id="progress-stats"></div>
+    <p class="streak-note" id="streak-note"></p>
+    <div class="achievement-list" id="achievement-list" aria-label="Achievements"></div>
+    <p class="progress-save-status" id="progress-save-status" role="status"></p>
+    <p class="progress-footnote">Streaks follow the daily track’s midnight Pacific rollover. Finish a run to save its progress.</p>
+  `,
     powerups: `
     <div class="guide-head"><button class="back" data-go="generate" aria-label="Back to Generate Track">‹</button><div class="guide-title">TRACK OPTIONS</div></div>
     <p class="mix-intro">Build your own challenge. Choose the shapes, points per level, and item frequencies, then generate a track to play or share.</p>
