@@ -42,7 +42,7 @@
     const el = document.createElement('div'); el.className = 'rank' + (entry.isYou ? ' you' : ''); el.setAttribute('role', 'row');
     const rank = document.createElement('b'), name = document.createElement('span'), score = document.createElement('b');
     for (const cell of [rank, name, score]) cell.setAttribute('role', 'cell');
-    rank.textContent = entry.rank;
+    rank.textContent = `#${entry.rank}`;
     name.textContent = entry.isYou ? 'YOU' : entry.tag;
     score.textContent = entry.score.toLocaleString(); el.append(rank, name, score); return el;
   }
