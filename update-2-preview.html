@@ -38,7 +38,7 @@
     .guide-head{position:relative;display:flex;align-items:center;justify-content:center;min-height:48px;margin-bottom:18px}.guide-head .back{position:absolute;left:0;top:2px}.guide-title{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 24px;border:1px solid #ff8ae8;border-radius:999px;background:#e934b8;color:#fff;font-size:16px;font-weight:1000;letter-spacing:2px;box-shadow:0 0 18px #ff48ce77,inset 0 1px #fff7;text-align:center}
   </style>
   <link rel="stylesheet" href="assets/menu-panels.css?v=track-options-1">
-  <link rel="stylesheet" href="assets/leaderboard.css?v=result-return-1">
+  <link rel="stylesheet" href="assets/leaderboard.css?v=threader-columns-1">
 </head>
 <body>
   <div class="stars" aria-hidden="true"></div>
@@ -97,8 +97,11 @@
     <section class="card view" id="leaderboard">
       <div class="guide-head"><button class="back" id="leaderboard-back" data-go="home">‹</button><h2 class="guide-title">LEADERBOARDS</h2></div>
       <label class="board-track" id="board-track-control" for="board-track-select">DAILY TRACK<select id="board-track-select"></select></label>
-      <div class="board board-table" id="board-entries" aria-busy="false"></div>
-      <div class="board board-table board-yours" id="board-yours"></div>
+      <div class="board-table" role="table" aria-label="Daily track leaderboard">
+        <div class="board-columns" role="row"><span role="columnheader">Rank</span><span role="columnheader">Threader ID</span><span role="columnheader">Score</span></div>
+        <div class="board" id="board-entries" role="rowgroup" aria-busy="false"></div>
+        <div class="board board-yours" id="board-yours" role="rowgroup"></div>
+      </div>
       <p class="leaderboard-status" id="board-status" role="status" aria-live="polite"></p>
       <button class="action secondary board-refresh" id="board-refresh">REFRESH</button>
     </section>
@@ -147,7 +150,7 @@
     addEventListener('visibilitychange',()=>{if(!document.hidden && ThreadDaily.today()!==day)location.reload()});
   </script>
   <script src="assets/result-navigation.js?v=result-return-1"></script>
-  <script src="assets/leaderboard-menu.js?v=result-return-1"></script>
+  <script src="assets/leaderboard-menu.js?v=threader-columns-1"></script>
   <script src="assets/generated-track-menu.js?v=track-leaderboards-1"></script>
 </body>
 </html>

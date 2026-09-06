@@ -12,3 +12,12 @@
 .archive-columns{display:grid;gap:8px;align-items:center;padding:8px 12px;margin:0 3px 4px 0;border:1px solid transparent;color:#9daed0;font-size:12px;font-weight:800;line-height:1.4}
 #archive .row .best{font-size:15px;font-variant-numeric:tabular-nums}
 #archive .row button{width:100%}
+
+/* Shared fixed score column keeps headings and every score aligned. */
+.board-table{--rank-column:40px;--score-column:86px;--board-gap:10px}
+.board-table .rank,.board-columns{display:grid;grid-template-columns:var(--rank-column) minmax(0,1fr) var(--score-column);gap:var(--board-gap);align-items:center;padding:11px;border:1px solid transparent}
+.board-table .rank{border-bottom-color:#ffffff14;font-variant-numeric:tabular-nums}
+.board-table .rank.you{border-color:#50e8ee88}
+.board-columns{padding-top:8px;padding-bottom:8px;color:#9daed0;font-size:12px;font-weight:800;line-height:1.4}
+.board-columns> :last-child,.board-table .rank> :last-child{text-align:right}
+@media(max-width:380px){.board-table{--rank-column:30px;--score-column:74px;--board-gap:6px}.board-columns{font-size:11px}}
