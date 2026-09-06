@@ -8,7 +8,7 @@
 
 #leaderboard .guide-title{margin:0}
 
-.archive-columns,#archive .row{grid-template-columns:minmax(36px,.65fr) minmax(0,1.3fr) minmax(0,1fr) minmax(56px,.9fr);gap:8px;padding-right:10px;padding-left:10px}
+.archive-columns,#archive .row{grid-template-columns:minmax(36px,.65fr) minmax(0,1.3fr) minmax(0,1fr) minmax(64px,.9fr);gap:8px;padding-right:10px;padding-left:10px}
 .archive-columns{display:grid;gap:8px;align-items:center;padding:8px 12px;margin:0 0 4px;border:1px solid transparent;color:#9daed0;font-size:12px;font-weight:800;line-height:1.4}
 #archive .row .best{font-size:15px;font-variant-numeric:tabular-nums}
 #archive .row button{width:100%}
@@ -19,7 +19,8 @@
 .board-table .rank{border-bottom-color:#ffffff14;font-variant-numeric:tabular-nums}
 .board-table .rank.you{border-color:#50e8ee88}
 .board-columns{padding-top:8px;padding-bottom:8px;color:#9daed0;font-size:12px;font-weight:800;line-height:1.4}
-.board-columns> :nth-child(2),.board-table .rank> :nth-child(2){text-align:center}
+/* Center a shared text block while keeping every ID on the same left edge. */
+.board-columns> :nth-child(2),.board-table .rank> :nth-child(2){width:min(100%,128px);justify-self:center;text-align:left}
 .board-columns> :last-child,.board-table .rank> :last-child{text-align:right}
 @media(max-width:380px){.board-table{--rank-column:30px;--score-column:74px;--board-gap:6px}.board-columns{font-size:11px}}
 
@@ -40,3 +41,8 @@
 .archive-pagination .pill:disabled{opacity:.4;box-shadow:none;cursor:default}
 #archive-page{color:#a9bedc;font-size:12px;white-space:nowrap}
 @media(max-width:380px){.archive-columns,#archive .row{gap:5px;padding-left:8px;padding-right:8px}.archive-columns{font-size:11px}#archive .row .best,#archive .global-rank{font-size:12px}}
+
+/* One decorative flag for every action that starts or replays a run. */
+#play,#again,#play-daily,#play-generated,#board-play,.archive-play{display:inline-flex;align-items:center;justify-content:center;column-gap:.4em}
+#play::before,#again::before,#play-daily::before,#play-generated::before,#board-play::before,.archive-play::before{content:"";display:block;flex:0 0 1.1em;width:1.1em;height:1.1em;background:url("play-flag.svg") center/contain no-repeat}
+.archive-play{padding-right:3px;padding-left:3px;column-gap:3px}

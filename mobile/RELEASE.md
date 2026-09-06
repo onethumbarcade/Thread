@@ -1,5 +1,10 @@
 # Mobile conversion
 
+## Version 0.1.8
+
+- Center the leaderboard ID text block while aligning its heading and IDs left.
+- Add matching checkered flag icons to Play, Replay, and Try Again actions.
+
 ## Version 0.1.7
 
 - Add global rank beside personal best in the track archive.
