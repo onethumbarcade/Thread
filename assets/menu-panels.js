@@ -82,7 +82,7 @@
   document.querySelectorAll("[data-thread-brand]").forEach((header) => {
     header.innerHTML = `
       <a class="thread-menu-brand thread-home-link" href="update-2-preview.html" aria-label="THREAD — title card">THREAD</a>
-      <a class="thread-menu-logo thread-home-link" href="update-2-preview.html" aria-label="One Thumb Arcade — title card"><img src="assets/one-thumb-icon-transparent.webp" alt="" width="160" height="160"></a>
+      <a class="thread-menu-logo thread-home-link" href="update-2-preview.html" aria-label="THREAD — title card"><img src="assets/thread-icon.png" alt="" width="160" height="160"></a>
     `;
   });
 })();

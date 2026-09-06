@@ -11,9 +11,9 @@
   <style>
     #home{min-height:min(72vh,620px);display:flex;flex-direction:column;justify-content:center}
     #home:not(.active){display:none}
-    .preview-studio-logo{display:block;flex-shrink:0;width:min(70vw,250px);height:auto;margin:-10px auto -2px;filter:drop-shadow(0 0 18px #16dfff35)}
-    #home .studio{margin-top:0;color:#91a8ca;font-size:10px;letter-spacing:5px;text-transform:lowercase}
-    #home h1{margin-top:5px}
+    .thread-title-logo{display:block;flex-shrink:0;width:min(70vw,280px);height:auto;margin:0 auto -2px}
+    #home .studio{margin:0 0 10px;color:#91a8ca;font-size:11px;letter-spacing:2px;text-transform:uppercase}
+    #home .thread-title{margin:0;font-size:0;line-height:1}
     #home .mode{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:5px;align-content:center;min-height:88px;margin-top:14px;padding:16px 18px;border-radius:21px}
     #home .mode strong{grid-column:1;font-size:21px;line-height:1.2;letter-spacing:1.4px}
     #home .mode small{grid-column:1;margin-top:0;font-size:13px;line-height:1.4}
@@ -39,8 +39,9 @@
     .settings-button{position:absolute;top:14px;right:14px;width:46px;height:46px;padding:0;border:1px solid #eaffff;border-radius:50%;background:linear-gradient(110deg,#32efff 0%,#7af7df 48%,#ff55d7 100%);box-shadow:0 5px 0 #08768b,0 0 18px #2ce8ff66;color:#05060b;font-size:23px;font-weight:900;z-index:2}
     .guide-head{position:relative;display:flex;align-items:center;justify-content:center;min-height:48px;margin-bottom:18px}.guide-head .back{position:absolute;left:0;top:2px}.guide-title{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 24px;border:1px solid #ff8ae8;border-radius:999px;background:#e934b8;color:#fff;font-size:16px;font-weight:1000;letter-spacing:2px;box-shadow:0 0 18px #ff48ce77,inset 0 1px #fff7;text-align:center}
   </style>
-  <link rel="stylesheet" href="assets/menu-panels.css?v=track-options-1">
+  <link rel="stylesheet" href="assets/menu-panels.css?v=thread-logo-1">
   <link rel="stylesheet" href="assets/leaderboard.css?v=table-spacing-1">
+<link rel="icon" type="image/png" href="assets/thread-icon.png">
 </head>
 <body>
   <div class="stars" aria-hidden="true"></div>
@@ -48,8 +49,8 @@
     <header class="topbar thread-menu-topbar" data-thread-brand hidden></header>
     <section class="card view active" id="home">
       <button class="settings-button" data-go="options" aria-label="Options">⚙︎</button>
-      <img class="preview-studio-logo" src="assets/one-thumb-arcade.webp" width="360" height="360" alt="One Thumb Arcade">
-      <div class="studio">presents</div><h1>THREAD</h1>
+      <h1 class="thread-title"><img class="thread-title-logo" src="assets/thread-logo.png" width="1254" height="1254" alt="THREAD"></h1>
+      <div class="studio">by One Thumb Arcade</div>
       <p class="sub">Choose today’s shared challenge, generate a fresh run, or revisit an earlier track.</p>
       <button class="mode primary" data-go="today"><span class="arrow">›</span><strong>TODAY’S TRACK</strong><small id="home-today">Same course for everyone</small></button>
       <button class="mode" data-go="generate"><span class="arrow">›</span><strong>GENERATE TRACK</strong><small>Customize, build, play, and share your own track</small></button>
@@ -116,9 +117,10 @@
     <section class="thread-menu-card view" id="powerups" data-thread-panel="powerups"></section>
   </div></main>
   <div class="ad">DISPLAY AD AREA</div>
-  <audio id="menu-music" loop preload="auto" src="assets/thread-menu.mp3?v=neon-drift-1"></audio>
-  <script src="assets/menu-panels.js?v=track-options-1"></script>
-  <script src="assets/track-sharing.js?v=track-options-1"></script>
+  <script src="assets/menu-music.js?v=continuous-1"></script>
+  <audio id="menu-music" loop preload="auto" src="assets/thread-menu.mp3?v=stillwater-1"></audio>
+  <script src="assets/menu-panels.js?v=thread-logo-1"></script>
+  <script src="assets/track-sharing.js?v=native-app-1"></script>
   <script src="assets/daily-tracks.js?v=pacific-midnight-1"></script>
   <script src="assets/leaderboard.js?v=archive-ranks-1"></script>
   <script src="assets/power-ups.js?v=track-options-1"></script>
@@ -143,14 +145,23 @@
     }));
     document.querySelector('#today-id').textContent=`TODAY’S TRACK: #${day}`;document.querySelector('#today-date').textContent=fmt.format(now).toUpperCase();document.querySelector('#home-today').textContent=`Track #${day} · ${fmt.format(now)}`;document.querySelector('#track-code').textContent=dailyShape;document.querySelector('#attempts').textContent=attempts;document.querySelector('#daily-best').textContent='—';
     function show(id){document.querySelectorAll('.view').forEach(v=>v.classList.toggle('active',v.id===id));document.querySelector('.topbar').hidden=id==='home';scrollTo(0,0);globalThis.ThreadLeaderboardMenu?.open(id)}document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
-    let settings={sfx:true,music:true,haptics:true,reduced:false};try{settings={...settings,...JSON.parse(localStorage.getItem('thread-settings')||'{}')}}catch(e){}const menuMusic=document.querySelector('#menu-music');menuMusic.volume=.34;let menuActive=!document.hidden;function syncMusic(){settings.music&&menuActive&&!document.hidden?menuMusic.play().catch(()=>{}):menuMusic.pause()}function refreshSettings(){document.querySelectorAll('[data-setting]').forEach(b=>b.classList.toggle('on',!!settings[b.dataset.setting]));document.body.classList.toggle('reduced-motion',!!settings.reduced)}document.querySelectorAll('[data-setting]').forEach(b=>b.onclick=()=>{settings[b.dataset.setting]=!settings[b.dataset.setting];try{localStorage.setItem('thread-settings',JSON.stringify(settings))}catch(e){}refreshSettings();syncMusic()});refreshSettings();addEventListener('pointerdown',syncMusic,{once:true});syncMusic();
-    const playDaily=n=>location.href=`index.html?mode=daily&track=${n}`;
+    let settings={sfx:true,music:true,haptics:true,reduced:false};try{settings={...settings,...JSON.parse(localStorage.getItem('thread-settings')||'{}')}}catch(e){}const menuMusic=ThreadMenuMusic.create(document.querySelector('#menu-music'));menuMusic.volume=.42;let menuActive=!document.hidden;function syncMusic(){settings.music&&menuActive?menuMusic.play().catch(()=>{}):menuMusic.pause()}function refreshSettings(){document.querySelectorAll('[data-setting]').forEach(b=>b.classList.toggle('on',!!settings[b.dataset.setting]));document.body.classList.toggle('reduced-motion',!!settings.reduced)}document.querySelectorAll('[data-setting]').forEach(b=>b.onclick=()=>{settings[b.dataset.setting]=!settings[b.dataset.setting];try{localStorage.setItem('thread-settings',JSON.stringify(settings))}catch(e){}refreshSettings();syncMusic()});refreshSettings();addEventListener('pointerdown',syncMusic,{once:true});syncMusic();
+    globalThis.ThreadAppBack=()=>{
+      const active=document.querySelector('.view.active');
+      if(!active || active.id==='home')return false;
+      if(active.id==='leaderboard')document.querySelector('#leaderboard-back').click();
+      else { const back=active.querySelector('.back,.thread-menu-back');back?back.click():show('home'); }
+      return true;
+    };
+    addEventListener('thread:app-state',event=>{menuActive=event.detail.isActive;syncMusic()});
+    addEventListener('visibilitychange',()=>{if(!globalThis.ThreadNative?.isNative){menuActive=!document.hidden;syncMusic()}});
+    const playDaily=n=>ThreadTracks.navigate(`index.html?mode=daily&track=${n}`);
     document.querySelector('#play-daily').onclick=()=>playDaily(ThreadDaily.today());
     addEventListener('visibilitychange',()=>{if(!document.hidden && ThreadDaily.today()!==day)location.reload()});
   </script>
-  <script src="assets/result-navigation.js?v=result-return-1"></script>
+  <script src="assets/result-navigation.js?v=native-app-1"></script>
   <script src="assets/track-archive.js?v=archive-ranks-1"></script>
   <script src="assets/leaderboard-menu.js?v=rank-prefix-1"></script>
-  <script src="assets/generated-track-menu.js?v=track-leaderboards-1"></script>
+  <script src="assets/generated-track-menu.js?v=native-app-1"></script>
 </body>
 </html>

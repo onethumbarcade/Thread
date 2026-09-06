@@ -203,20 +203,20 @@
         min-height: min(72vh, 600px);
         overflow: hidden;
       }
-      .studio-logo {
+      #start .thread-title { margin: 0; font-size: 0; line-height: 1; }
+      .thread-title-logo {
         display: block;
-        width: min(66vw, 238px);
+        width: min(70vw, 280px);
         height: auto;
-        margin: -16px auto -4px;
-        filter: drop-shadow(0 0 18px #16dfff30);
+        margin: 0 auto;
       }
-      #start > .presents {
+      #start > .studio-credit {
         margin: 0 0 3px;
         color: #8ba4c9;
         font-size: 10px;
         font-weight: 900;
-        letter-spacing: 5px;
-        text-transform: lowercase;
+        letter-spacing: 2px;
+        text-transform: uppercase;
       }
       .logo {
         position: relative;
@@ -311,6 +311,11 @@
         font-weight: 1000;
         letter-spacing: 2px;
       }
+      .native-only { display: none; }
+      .pause-game { width:36px;min-height:36px;margin:0;padding:4px;font-size:18px;border-radius:12px; }
+      #pause { z-index:20; }
+      #pause button { width:100%; }
+      #pause .eyebrow { color:#65efff; }
       .result {
         max-height: calc(100dvh - 32px);
         overflow-y: auto;
@@ -652,9 +657,10 @@
         }
       }
     </style>
-    <link rel="stylesheet" href="assets/menu-panels.css?v=track-options-1" />
+    <link rel="stylesheet" href="assets/menu-panels.css?v=thread-logo-1" />
       <link rel="stylesheet" href="assets/leaderboard.css?v=play-flags-1">
-  </head>
+  <link rel="icon" type="image/png" href="assets/thread-icon.png">
+</head>
   <body>
     <main class="game">
       <canvas
@@ -665,6 +671,7 @@
         <div class="hudtop">
           <a class="brand thread-home-link" href="update-2-preview.html" aria-label="THREAD — title card">THREAD</a>
           <div class="level">LEVEL <b id="level">1</b></div>
+          <button class="pause-game native-only" id="pause-game" aria-label="Pause game">Ⅱ</button>
         </div>
         <div class="meters">
           <span>SIZE<b id="ring">34</b></span
@@ -687,9 +694,8 @@
           <i></i><i></i><i></i><i></i><i></i>
           <i></i><i></i><i></i><i></i><i></i>
         </div>
-        <img class="studio-logo" src="assets/one-thumb-arcade.webp" width="360" height="360" alt="One Thumb Arcade" />
-        <p class="presents">presents</p>
-        <h1>THREAD</h1>
+        <h1 class="thread-title"><img class="thread-title-logo" src="assets/thread-logo.png" width="1254" height="1254" alt="THREAD" /></h1>
+        <p class="studio-credit">by One Thumb Arcade</p>
         <p>Move the tracker. Keep the neon laser running through it.</p>
         <ul>
           <li><b>Slide</b> to move the tracker</li>
@@ -702,6 +708,11 @@
         ><button class="options-btn" data-open-options aria-label="Options">
           ⚙︎
         </button>
+      </section>
+      <section class="card hidden" id="pause" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+        <h2 class="eyebrow" id="pause-title">PAUSED</h2>
+        <button id="resume-game">CONTINUE</button>
+        <button id="pause-home">HOME</button>
       </section>
       <section class="card result hidden" id="result">
         <div class="card-stars falling-stars" aria-hidden="true">
@@ -745,14 +756,15 @@
       id="menu-bgm"
       loop
       preload="auto"
-      src="assets/thread-menu.mp3?v=neon-drift-1"
+      src="assets/thread-menu.mp3?v=stillwater-1"
     ></audio>
-    <script src="assets/menu-panels.js?v=track-options-1"></script>
-    <script src="assets/track-sharing.js?v=track-options-1"></script>
+    <script src="assets/menu-music.js?v=continuous-1"></script>
+    <script src="assets/menu-panels.js?v=thread-logo-1"></script>
+    <script src="assets/track-sharing.js?v=native-app-1"></script>
     <script src="assets/daily-tracks.js?v=pacific-midnight-1"></script>
     <script src="assets/game-renderer.js?v=star-3-cached-neon-1"></script>
-    <script src="assets/leaderboard.js?v=daily-variety-2"></script>
-    <script src="assets/result-navigation.js?v=result-return-1"></script>
+    <script src="assets/leaderboard.js?v=native-app-1"></script>
+    <script src="assets/result-navigation.js?v=native-app-1"></script>
     <script src="assets/daily-music.js?v=generated-music-1"></script>
     <script src="assets/track-options.js?v=daily-variety-2"></script>
     <script src="assets/collectibles.js"></script>
@@ -791,7 +803,7 @@
         startBest = document.querySelector("#start-best"),
         resultBest = document.querySelector("#result-best"),
         newBest = document.querySelector("#new-best"),
-        menuBgm = document.querySelector("#menu-bgm");
+        menuBgm = ThreadMenuMusic.create(document.querySelector("#menu-bgm"));
       let game,
         started = false,
         pointer = false,
@@ -806,7 +818,9 @@
         musicSession = 0,
         rankedSession,
         completedResult,
-        optionsReturn;
+        optionsReturn,
+        gamePaused = false,
+        appActive = !document.hidden;
       const runParams = new URLSearchParams(location.search),
         runMode = runParams.get("mode") || "generated",
         runTrack = runMode === "daily" ? String(ThreadDaily.getTrack(runParams.get("track") || ThreadDaily.today()).id) : null,
@@ -862,7 +876,9 @@
         } catch (e) {}
       }
       function buzz(pattern) {
-        if (settings.haptics && navigator.vibrate) navigator.vibrate(pattern);
+        if (!settings.haptics) return;
+        if (globalThis.ThreadNative?.isNative) ThreadNative.haptic();
+        else if (navigator.vibrate) navigator.vibrate(pattern);
       }
       function refreshOptions() {
         document.querySelectorAll("[data-setting]").forEach((b) => {
@@ -969,7 +985,7 @@
       resize();
       if (globalThis.ResizeObserver) new ResizeObserver(measureHud).observe(hud);
       function tone(f, d, type = "sine", gain = 0.06, delay = 0, end = f) {
-        if (!audio) return;
+        if (!audio || gamePaused || !appActive) return;
         const o = audio.createOscillator(),
           v = audio.createGain(),
           t = audio.currentTime + delay;
@@ -1014,14 +1030,13 @@
         menuBgm.pause();
       }
       function startMenuMusic() {
-        stopMenuMusic();
-        if (!settings.music || (started && game?.running && !gamePaused)) return;
-        menuBgm.volume = 0.34;
+        if (!appActive || !settings.music || (started && game?.running && !gamePaused)) { stopMenuMusic(); return; }
+        menuBgm.volume = 0.42;
         menuBgm.play().catch(() => {});
       }
       function startMusic() {
         stopMenuMusic();
-        if (!settings.music || !started || !game?.running) return;
+        if (!appActive || gamePaused || !settings.music || !started || !game?.running) return;
         audio?.resume()?.catch(() => {});
         // The first touch may only be unlocking audio. Keep the current song
         // and queued notes instead of rewinding a track that already started.
@@ -1111,7 +1126,50 @@
       }
       document.querySelector("#result-board-link").onclick = () => rememberResult();
       addEventListener("pageshow", event => { if (event.persisted) refreshResultRanking(); });
+      function pauseGame() {
+        if (!started || !game?.running || gamePaused) return;
+        gamePaused = true;
+        pointer = false;
+        slider.classList.add("hidden");
+        document.querySelector("#pause").classList.remove("hidden");
+        audio?.suspend?.()?.catch(() => {});
+        startMenuMusic();
+      }
+      function resumeGame() {
+        if (!appActive || !gamePaused) return;
+        gamePaused = false;
+        pointer = false;
+        previous = performance.now();
+        document.querySelector("#pause").classList.add("hidden");
+        slider.classList.remove("hidden");
+        audio?.resume()?.catch(() => {});
+        startMusic();
+      }
+      function appState(active) {
+        appActive = active;
+        if (!active) {
+          pauseGame();
+          stopMenuMusic();
+          audio?.suspend?.()?.catch(() => {});
+        } else if (!game?.running || gamePaused) startMenuMusic();
+      }
+      addEventListener("thread:app-state", event => appState(event.detail.isActive));
+      addEventListener("visibilitychange", () => { if (!globalThis.ThreadNative?.isNative) appState(!document.hidden); });
+      document.querySelector("#pause-game").onclick = pauseGame;
+      document.querySelector("#resume-game").onclick = resumeGame;
+      document.querySelector("#pause-home").onclick = () => document.querySelector("#home-button").click();
+      globalThis.ThreadAppBack = () => {
+        if (!optionsCard.classList.contains("hidden")) {
+          optionsCard.classList.add("hidden");
+          optionsReturn?.classList.remove("hidden");
+        } else if (game?.running) {
+          gamePaused ? resumeGame() : pauseGame();
+        } else document.querySelector("#home-button").click();
+        return true;
+      };
       function begin() {
+        gamePaused = false;
+        document.querySelector("#pause").classList.add("hidden");
         ThreadResultNavigation.clear();
         completedResult = null;
         stopMenuMusic();
@@ -1155,8 +1213,7 @@
       document.querySelector("#again").onclick = begin;
       document.querySelector("#home-button").onclick = () => {
         stopMusic();
-        stopMenuMusic();
-        location.href = "update-2-preview.html";
+        ThreadTracks.navigate("update-2-preview.html");
       };
       document.querySelector("#share-score").onclick = async () => {
         const runScore = Math.floor(game?.score || 0).toLocaleString(),
@@ -1164,13 +1221,13 @@
           runSize = Math.round(game?.ringRadius || 0),
           runSpeed = ((game?.speed || 54) / 54).toFixed(1),
           runLevel = Math.floor((game?.score || 0) / (dailyTrack?.levelScore || STAGE)) + 1,
-          shareUrl = ThreadTracks.trackUrl(
+          shareUrl = ThreadTracks.shareUrl(ThreadTracks.trackUrl(
             runMode === "daily" ? "daily" : "generated",
             runMode === "daily" ? runTrack || 1 : runSeed,
             location.href,
             dailyTrack ? undefined : runMix,
             dailyTrack ? undefined : runOptions,
-          ),
+          )),
           trackLine =
             runMode === "daily" ? `Daily Track #${runTrack || 1}\n` : `Track code: ${runSeed}\n`,
           shareText = `I scored ${runScore} in THREAD by One Thumb Arcade!\n\n${trackLine}${runDistance}m threaded · ${runSize}px size · ${runSpeed}× speed · Level ${runLevel}\n\nCan you beat me?`;
@@ -1251,9 +1308,9 @@
         },
         { once: true },
       );
-      startMenuMusic();
+      if (!runParams.has("mode")) startMenuMusic();
       function move(x) {
-        if (!pointer || !game?.running) return;
+        if (!pointer || !game?.running || gamePaused || !appActive) return;
         const r = Math.min(width * 0.4, 190);
         game.ringOffset = Math.max(
           -r,
@@ -1267,7 +1324,7 @@
       }
       addEventListener("pointerdown", (e) => {
         if (e.target.closest(".thread-home-link")) return;
-        if (!started || !game?.running) return;
+        if (!started || !game?.running || gamePaused || !appActive || e.target.closest("button")) return;
         pointer = true;
         pointerX = e.clientX;
       });
@@ -1343,7 +1400,7 @@
           hud.style.setProperty("--laser-soft", laser[0] + "24");
           hud.style.setProperty("--laser-glow", laser[0] + "66");
         }
-        if (started && g.running) {
+        if (started && g.running && !gamePaused && appActive) {
           g.elapsed = (g.elapsed || 0) + dt;
           extend(g.nodes, g.distance + height * 2, g.random);
           if (g.collectibles) ThreadCollectibles.extend(g.collectibles, g.distance + height * 2);
