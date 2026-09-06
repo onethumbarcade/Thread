@@ -1,5 +1,11 @@
 # Mobile conversion
 
+## Version 0.1.13
+
+- Apply the approved threaded-ring logo to the title screens and card branding.
+- Use the ring symbol for Android and iOS app icons and launch screens.
+- Include Stillwater and the continuous native card music from 0.1.12.
+
 ## Version 0.1.12
 
 - Replace the menu theme with Stillwater: a slower, spacious original chill track.

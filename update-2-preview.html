@@ -11,9 +11,9 @@
   <style>
     #home{min-height:min(72vh,620px);display:flex;flex-direction:column;justify-content:center}
     #home:not(.active){display:none}
-    .preview-studio-logo{display:block;flex-shrink:0;width:min(70vw,250px);height:auto;margin:-10px auto -2px;filter:drop-shadow(0 0 18px #16dfff35)}
-    #home .studio{margin-top:0;color:#91a8ca;font-size:10px;letter-spacing:5px;text-transform:lowercase}
-    #home h1{margin-top:5px}
+    .thread-title-logo{display:block;flex-shrink:0;width:min(70vw,280px);height:auto;margin:0 auto -2px}
+    #home .studio{margin:0 0 10px;color:#91a8ca;font-size:11px;letter-spacing:2px;text-transform:uppercase}
+    #home .thread-title{margin:0;font-size:0;line-height:1}
     #home .mode{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:5px;align-content:center;min-height:88px;margin-top:14px;padding:16px 18px;border-radius:21px}
     #home .mode strong{grid-column:1;font-size:21px;line-height:1.2;letter-spacing:1.4px}
     #home .mode small{grid-column:1;margin-top:0;font-size:13px;line-height:1.4}
@@ -48,8 +48,8 @@
     <header class="topbar thread-menu-topbar" data-thread-brand hidden></header>
     <section class="card view active" id="home">
       <button class="settings-button" data-go="options" aria-label="Options">⚙︎</button>
-      <img class="preview-studio-logo" src="assets/one-thumb-arcade.webp" width="360" height="360" alt="One Thumb Arcade">
-      <div class="studio">presents</div><h1>THREAD</h1>
+      <h1 class="thread-title"><img class="thread-title-logo" src="assets/thread-logo.png" width="1254" height="1254" alt="THREAD"></h1>
+      <div class="studio">by One Thumb Arcade</div>
       <p class="sub">Choose today’s shared challenge, generate a fresh run, or revisit an earlier track.</p>
       <button class="mode primary" data-go="today"><span class="arrow">›</span><strong>TODAY’S TRACK</strong><small id="home-today">Same course for everyone</small></button>
       <button class="mode" data-go="generate"><span class="arrow">›</span><strong>GENERATE TRACK</strong><small>Customize, build, play, and share your own track</small></button>
