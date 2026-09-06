@@ -47,6 +47,9 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
+          # Avoid emulator Vulkan/WebView compatibility crashes on the headless runner.
+          # https://developer.android.com/studio/run/emulator-troubleshooting#cannot-open-webpage
+          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
           script: |
             adb shell svc wifi disable
             adb shell svc data disable
