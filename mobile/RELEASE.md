@@ -1,5 +1,10 @@
 # Mobile conversion
 
+## Version 0.1.9
+
+- Increase Daily Track stat labels from 9px to 13px with aligned values and room for wrapping.
+- Rename Your Best to Personal Best.
+
 ## Version 0.1.8
 
 - Center the leaderboard ID text block while aligning its heading and IDs left.
