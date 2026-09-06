@@ -45,16 +45,17 @@
         background: linear-gradient(#02040df5, #02040dcc 78%, transparent);
       }
       .hudtop {
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         align-items: center;
-        justify-content: space-between;
         margin-bottom: 8px;
       }
       .brand {
-        font-size: 20px;
+        justify-self: start;
+        font-size: clamp(16px, 5vw, 20px);
         font-weight: 1000;
         font-style: italic;
-        letter-spacing: 5px;
+        letter-spacing: clamp(3px, 1vw, 5px);
         background: linear-gradient(90deg, #35efff, #fff 48%, #ff52d3);
         -webkit-background-clip: text;
         background-clip: text;
@@ -312,10 +313,31 @@
         letter-spacing: 2px;
       }
       .native-only { display: none; }
-      .pause-game { width:36px;min-height:36px;margin:0;padding:4px;font-size:18px;border-radius:12px; }
-      #pause { z-index:20; }
-      #pause button { width:100%; }
+      .pause-game {
+        justify-self: end;
+        display: grid;
+        place-items: center;
+        width: 44px;
+        height: 44px;
+        margin: 0;
+        padding: 10px;
+        border: 1px solid var(--laser, #52e9ff);
+        border-radius: 14px;
+        background: #0b1425e8;
+        color: var(--laser, #52e9ff);
+        box-shadow: inset 0 1px #ffffff18, 0 0 14px var(--laser-glow, #18cfff44);
+        pointer-events: auto;
+        touch-action: manipulation;
+        cursor: pointer;
+      }
+      .pause-game[hidden] { display: none; }
+      .pause-game svg { width: 22px; height: 22px; fill: currentColor; }
+      .pause-game:active { background: #183149; }
+      .pause-game:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+      #pause { z-index:20; box-shadow: 0 0 0 100vmax #02040dbb, 0 0 34px #20dbff33; }
+      #pause button { width:100%; margin-top: 16px; }
       #pause .eyebrow { color:#65efff; }
+      #pause p { margin: 8px 0 6px; color: #91a6ca; font-size: 14px; }
       .result {
         max-height: calc(100dvh - 32px);
         overflow-y: auto;
@@ -671,7 +693,9 @@
         <div class="hudtop">
           <a class="brand thread-home-link" href="update-2-preview.html" aria-label="THREAD — title card">THREAD</a>
           <div class="level">LEVEL <b id="level">1</b></div>
-          <button class="pause-game native-only" id="pause-game" aria-label="Pause game">Ⅱ</button>
+          <button class="pause-game" id="pause-game" type="button" aria-label="Pause game" aria-haspopup="dialog" aria-controls="pause">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="5" height="16" rx="1.5"/><rect x="14" y="4" width="5" height="16" rx="1.5"/></svg>
+          </button>
         </div>
         <div class="meters">
           <span>SIZE<b id="ring">34</b></span
@@ -711,6 +735,7 @@
       </section>
       <section class="card hidden" id="pause" role="dialog" aria-modal="true" aria-labelledby="pause-title">
         <h2 class="eyebrow" id="pause-title">PAUSED</h2>
+        <p>Your run is on hold.</p>
         <button id="resume-game">CONTINUE</button>
         <button id="pause-home">HOME</button>
       </section>
@@ -756,7 +781,7 @@
       id="menu-bgm"
       loop
       preload="auto"
-      src="assets/thread-menu.mp3?v=stillwater-1"
+      src="assets/thread-menu.mp3?v=neon-current-1"
     ></audio>
     <script src="assets/menu-music.js?v=continuous-1"></script>
     <script src="assets/menu-panels.js?v=thread-logo-1"></script>
@@ -1051,6 +1076,7 @@
         });
       }
       function showResult(isBest) {
+        document.querySelector("#pause-game").hidden = true;
         const runScore = Math.floor(game.score);
         newBest.textContent = runScore.toLocaleString();
         newBest.classList.toggle("show", isBest);
@@ -1132,15 +1158,19 @@
         pointer = false;
         slider.classList.add("hidden");
         document.querySelector("#pause").classList.remove("hidden");
+        document.querySelector("#pause-game").disabled = true;
+        document.querySelector("#resume-game").focus();
         audio?.suspend?.()?.catch(() => {});
         startMenuMusic();
       }
       function resumeGame() {
-        if (!appActive || !gamePaused) return;
+        if (!appActive || !game?.running || !gamePaused) return;
         gamePaused = false;
         pointer = false;
         previous = performance.now();
         document.querySelector("#pause").classList.add("hidden");
+        document.querySelector("#pause-game").disabled = false;
+        document.querySelector("#pause-game").focus();
         slider.classList.remove("hidden");
         audio?.resume()?.catch(() => {});
         startMusic();
@@ -1158,6 +1188,16 @@
       document.querySelector("#pause-game").onclick = pauseGame;
       document.querySelector("#resume-game").onclick = resumeGame;
       document.querySelector("#pause-home").onclick = () => document.querySelector("#home-button").click();
+      addEventListener("keydown", event => {
+        if (event.key === "Escape" && started && game?.running) {
+          event.preventDefault();
+          gamePaused ? resumeGame() : pauseGame();
+        } else if (event.key === "Tab" && gamePaused) {
+          const first = document.querySelector("#resume-game"), last = document.querySelector("#pause-home");
+          if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+          else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+        }
+      });
       globalThis.ThreadAppBack = () => {
         if (!optionsCard.classList.contains("hidden")) {
           optionsCard.classList.add("hidden");
@@ -1169,6 +1209,8 @@
       };
       function begin() {
         gamePaused = false;
+        document.querySelector("#pause-game").hidden = false;
+        document.querySelector("#pause-game").disabled = false;
         document.querySelector("#pause").classList.add("hidden");
         ThreadResultNavigation.clear();
         completedResult = null;
@@ -1383,6 +1425,7 @@
       function frame(time) {
         const dt = Math.max(0, Math.min(0.033, (time - previous) / 1000));
         previous = time;
+        if (gamePaused || !appActive) { requestAnimationFrame(frame); return; }
         const g = game || fresh(),
           cx = width / 2,
           top = hudHeight,
