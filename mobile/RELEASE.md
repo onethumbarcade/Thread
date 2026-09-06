@@ -1,5 +1,11 @@
 # Mobile conversion
 
+## Version 0.1.10
+
+- Extend archive Play and Replay buttons to fill the right-hand action column.
+- Move the leaderboard Threader ID column slightly right while keeping its text left-aligned.
+- Prefix every leaderboard rank with #.
+
 ## Version 0.1.9
 
 - Increase Daily Track stat labels from 9px to 13px with aligned values and room for wrapping.
