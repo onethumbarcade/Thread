@@ -23,6 +23,8 @@
     #home .mode[data-go="archive"],#home .mode[data-go="leaderboard"]{color:#07142c;border-color:#d9f4ff;background:var(--thread-blue-gradient);box-shadow:0 6px 0 #304f8f,0 0 23px #739dff44}
     #home .mode[data-go="archive"] small,#home .mode[data-go="leaderboard"] small{color:#182d52}
     #today .daily-note{margin-top:26px;font-size:13px;line-height:1.5}
+    #today .fingerprint>span{display:grid;grid-template-rows:minmax(2.4em,auto) auto;font-size:13px;line-height:1.2;letter-spacing:.45px}
+    #today .fingerprint .stat-label{font:inherit;align-self:center}
     .hero .daily-frequencies{display:grid;gap:3px;margin:12px 0 0;padding-top:12px;border-top:1px solid #55f4e633;color:#a9bedc;font-size:13px;line-height:1.6;text-align:left}
     .daily-frequencies .frequency-row{display:flex;align-items:baseline;gap:8px}
     .daily-frequencies .frequency-row::after{content:"";order:1;flex:1;border-bottom:1px dotted #a9bedc80}
@@ -57,7 +59,7 @@
     <section class="card view" id="today">
       <div class="guide-head"><button class="back" data-go="home">‹</button><div class="guide-title" id="today-id">TODAY’S TRACK: #1</div></div>
       <div class="hero" style="--neon:#45f0dd"><div class="date" id="today-date"></div><h3>THE DAILY THREAD</h3><p id="daily-rules">One laser. One layout. One worldwide leaderboard.</p><dl class="daily-frequencies" id="daily-frequencies" aria-label="Item frequencies"></dl></div>
-      <div class="fingerprint"><span>STARTING SHAPE<b id="track-code">—</b></span><span>ATTEMPTS<b id="attempts">0</b></span><span>YOUR BEST<b id="daily-best">—</b></span></div>
+      <div class="fingerprint"><span><small class="stat-label">STARTING SHAPE</small><b id="track-code">—</b></span><span><small class="stat-label">ATTEMPTS</small><b id="attempts">0</b></span><span><small class="stat-label">PERSONAL BEST</small><b id="daily-best">—</b></span></div>
       <p class="leaderboard-status score-sync-status" id="today-score-status" role="status"></p>
       <button class="action" id="play-daily">PLAY TODAY’S TRACK</button>
       <!-- Reserved for event previews a couple of days before the event. -->
