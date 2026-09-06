@@ -1,5 +1,12 @@
 # Mobile conversion
 
+## Version 0.1.3
+
+- Add aligned Rank, Threader ID, and Score headers; show bare public IDs and retain YOU.
+- Replace per-frame laser/tracker shadow blurs with layered neon strokes, including the rainbow Star pulse.
+- Update HUD values and power timers only when their displayed values change.
+- Keep shape geometry, collision rules, power durations, and canvas resolution unchanged.
+
 ## Version 0.1.2
 
 - Daily tracks and their dates use midnight Pacific, including daylight saving changes.

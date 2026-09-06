@@ -761,7 +761,7 @@
     <script src="assets/menu-panels.js?v=track-options-1"></script>
     <script src="assets/track-sharing.js?v=native-app-1"></script>
     <script src="assets/daily-tracks.js?v=pacific-midnight-1"></script>
-    <script src="assets/game-renderer.js?v=cached-neon-1"></script>
+    <script src="assets/game-renderer.js?v=star-3-cached-neon-1"></script>
     <script src="assets/leaderboard.js?v=native-app-1"></script>
     <script src="assets/result-navigation.js?v=native-app-1"></script>
     <script src="assets/daily-music.js?v=generated-music-1"></script>
@@ -1372,6 +1372,10 @@
         buzz(orb ? 12 : 18);
         effect(g, x, y, "+" + points, orb ? "#ffd447" : "#8dff9d");
       }
+      function setHudText(element, value) {
+        const text = String(value);
+        if (element.textContent !== text) element.textContent = text;
+      }
       function frame(time) {
         const dt = Math.max(0, Math.min(0.033, (time - previous) / 1000));
         previous = time;
@@ -1556,15 +1560,7 @@
         }
         ctx.lineCap = "round";
         ctx.lineJoin = "round";
-        ctx.strokeStyle = laser[0] + "2d";
-        ctx.lineWidth = 21;
-        ctx.stroke(path);
-        ctx.strokeStyle = laser[0];
-        ctx.shadowColor = laser[1];
-        ctx.shadowBlur = 17;
-        ctx.lineWidth = 5;
-        ctx.stroke(path);
-        ctx.shadowBlur = 0;
+        renderer.glowStroke(laser[0], laser[1], 5, 17, 1, path);
         for (const p of g.pickups) {
           if (p.collected) continue;
           const sy = p.magnetY ?? ringY - (p.y - g.distance);
@@ -1730,24 +1726,17 @@
           rainbow = ctx.createLinearGradient(ringX - span, ringY - span, ringX + span, ringY + span);
           for (let band = 0; band <= 6; band++)
             rainbow.addColorStop(band / 6, `hsl(${(starHue + band * 60) % 360} 100% 65%)`);
-          // Pulse the outline/glow of the current shape without changing its hitbox.
-          ctx.save();
-          ctx.strokeStyle = rainbow;
-          ctx.lineWidth = 16 + starPulse * 6;
-          ctx.globalAlpha = .25 + starPulse * .12;
-          ctx.shadowColor = `hsl(${starHue} 100% 65%)`;
-          ctx.shadowBlur = 25 + starPulse * 15;
-          shape(ringX, ringY, g.ringRadius, s, z);
-          ctx.stroke();
-          ctx.restore();
         }
-        ctx.strokeStyle = starActive ? rainbow : on ? "#ffd447" : "#ff5470";
-        ctx.lineWidth = starActive ? 7 + starPulse * 2 : 7;
-        ctx.shadowColor = starActive ? `hsl(${starHue} 100% 65%)` : on ? "#ffd447" : "#ff3158";
-        ctx.shadowBlur = starActive ? 22 + starPulse * 14 : 18 + (settings.reduced ? 0 : g.flash * 18);
+        // Layer translucent strokes instead of rasterizing two changing blur masks
+        // every frame. The rainbow pulse follows the exact same collision shape.
         shape(ringX, ringY, g.ringRadius, s, z);
-        ctx.stroke();
-        ctx.shadowBlur = 0;
+        renderer.glowStroke(
+          starActive ? rainbow : on ? "#ffd447" : "#ff5470",
+          starActive ? rainbow : on ? "#ffd447" : "#ff3158",
+          starActive ? 7 + starPulse * 2 : 7,
+          starActive ? 22 + starPulse * 14 : 18 + (settings.reduced ? 0 : g.flash * 18),
+          starActive ? 1.6 + starPulse * .6 : 1,
+        );
         ctx.fillStyle = starActive ? "#ffffff" : on ? "#fff3a5" : "#ff8da0";
         ctx.beginPath();
         ctx.arc(ringX, ringY, 4, 0, TAU);
@@ -1771,16 +1760,18 @@
         if (g.flash > 0) g.flash = Math.max(0, g.flash - dt * 2.3);
         if (started && time - lastHud > 90) {
           lastHud = time;
-          level.textContent = stage;
-          ring.textContent = Math.round(g.ringRadius);
-          speed.textContent = (g.speed / 54).toFixed(1) + "×";
-          score.textContent = Math.floor(g.score).toLocaleString();
-          energy.style.width = Math.round(g.energy) + "%";
+          setHudText(level, stage);
+          setHudText(ring, Math.round(g.ringRadius));
+          setHudText(speed, (g.speed / 54).toFixed(1) + "×");
+          setHudText(score, Math.floor(g.score).toLocaleString());
+          const energyWidth = Math.round(g.energy) + "%";
+          if (energy.style.width !== energyWidth) energy.style.width = energyWidth;
           for (const kind of Object.keys(ThreadPowerUps.durations)) {
             const timer = document.querySelector(`#${kind}-timer`);
-            timer.hidden = g.powerUps[kind] <= 0;
+            const inactive = g.powerUps[kind] <= 0;
+            if (timer.hidden !== inactive) timer.hidden = inactive;
             const label = { star: "★ INVINCIBLE", blaster: "⚡ BLASTER", magnet: "∩ MAGNET", slow: "◷ SLOW", double: "2× POINTS" }[kind];
-            timer.textContent = `${label} ${Math.ceil(g.powerUps[kind])}s`;
+            if (!inactive) setHudText(timer, `${label} ${Math.ceil(g.powerUps[kind])}s`);
           }
         }
         requestAnimationFrame(frame);

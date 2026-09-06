@@ -103,6 +103,19 @@ public class LaunchTest {
                     "window.ThreadAppBack && document.querySelector('#home.active'))");
                 assertEquals("\"https://localhost/update-2-preview.html\"", evaluate(scenario, "location.href"));
                 assertEquals("false", evaluate(scenario, "!!document.querySelector('.native-start-error')"));
+                evaluate(scenario, "ThreadLeaderboard.board=async()=>({entries:[" +
+                    "{rank:1,tag:'A1B2C3D4E5F6',score:52910,isYou:true}," +
+                    "{rank:2,tag:'C826221469A5',score:47683,isYou:false}]," +
+                    "yours:{rank:1,tag:'A1B2C3D4E5F6',score:52910,isYou:true}});show('leaderboard')");
+                awaitReady(scenario, "document.querySelectorAll('#board-entries .rank').length===2");
+                assertEquals("true", evaluate(scenario, "(() => {" +
+                    "const headers=[...document.querySelectorAll('.board-columns [role=columnheader]')];" +
+                    "const row=document.querySelectorAll('#board-entries .rank')[1];" +
+                    "return headers.map(x=>x.textContent).join('|')==='Rank|Threader ID|Score' && " +
+                    "row.children[1].textContent==='C826221469A5' && " +
+                    "headers.every((h,i)=>Math.abs(h.getBoundingClientRect().left-row.children[i].getBoundingClientRect().left)<2);})()"));
+                screenshot("thread-leaderboard.png");
+                evaluate(scenario, "show('home')");
                 evaluate(scenario, "document.querySelector('#home [data-go=generate]').click()");
                 awaitReady(scenario, "!!document.querySelector('#generate.active')");
                 evaluate(scenario, "window.ThreadAppBack()");

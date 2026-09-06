@@ -63,7 +63,7 @@ test('rankings show YOU and game IDs even when a cached response contains legacy
   const other={rank:1,track:1,score:60000,name:'FUCK YOU',tag:'98AC1234D567',isYou:false};
   m.setRows([other,own],own);m.context.ThreadLeaderboardMenu.open('leaderboard');await tick();
   let rows=m.get('board-entries').children;
-  assert.equal(rows[0].children[1].textContent,'PLAYER 98AC1234D567');
+  assert.equal(rows[0].children[1].textContent,'98AC1234D567');
   assert.equal(rows[1].children[1].textContent,'YOU');
   assert.equal(rows[1].className,'rank you');
   assert.equal(m.get('board-yours').hidden,true);

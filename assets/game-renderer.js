@@ -46,7 +46,23 @@
       }
       ctx.drawImage(image, -size / 2, -size / 2, size, size);
     }
-    return { resize, background, sprite };
+    function glowStroke(core, glow, lineWidth, spread, strength = 1, path) {
+      ctx.save();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = glow;
+      // Soft concentric strokes avoid creating and blurring shadow masks.
+      const opacity = [.12, .065, .03, .012];
+      for (let layer = 4; layer >= 1; layer--) {
+        ctx.globalAlpha = opacity[layer - 1] * strength;
+        ctx.lineWidth = lineWidth + spread * layer / 2;
+        if (path) ctx.stroke(path); else ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = core; ctx.lineWidth = lineWidth;
+      if (path) ctx.stroke(path); else ctx.stroke();
+      ctx.restore();
+    }
+    return { resize, background, sprite, glowStroke };
   }
   globalThis.ThreadRenderer = { create };
 })();
