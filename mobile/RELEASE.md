@@ -1,5 +1,12 @@
 # Mobile conversion
 
+## Version 0.1.2
+
+- Daily tracks and their dates use midnight Pacific, including daylight saving changes.
+- Cache the animated background glows and collectible artwork; preserve the neon style, canvas resolution, and gameplay physics.
+- Measure HUD layout on changes instead of every frame and use an opaque gameplay canvas.
+- Android CI compares the prior and cached renderers in the installed WebView and verifies touch movement. Emulator measurements still need confirmation on a phone.
+
 ## Included
 
 - Capacitor 8 Android and iOS projects with the THREAD name and existing artwork.

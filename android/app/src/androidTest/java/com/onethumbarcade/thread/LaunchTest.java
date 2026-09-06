@@ -5,19 +5,38 @@ import static org.junit.Assert.assertTrue;
 
 import android.graphics.Bitmap;
 import android.os.SystemClock;
+import android.os.ParcelFileDescriptor;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.platform.app.InstrumentationRegistry;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 @RunWith(AndroidJUnit4.class)
 public class LaunchTest {
+    private String asset(String name) throws Exception {
+        try (java.io.InputStream input = InstrumentationRegistry.getInstrumentation().getContext().getAssets().open(name)) {
+            return new String(input.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    private void screenshot(String name) throws Exception {
+        try (ParcelFileDescriptor descriptor = InstrumentationRegistry.getInstrumentation().getUiAutomation()
+                .executeShellCommand("screencap -p /sdcard/Download/" + name);
+             FileInputStream stream = new FileInputStream(descriptor.getFileDescriptor())) {
+            stream.readAllBytes();
+        }
+    }
+
     private String evaluate(ActivityScenario<MainActivity> scenario, String script) throws Exception {
         CountDownLatch done = new CountDownLatch(1);
         AtomicReference<String> result = new AtomicReference<>();
@@ -37,6 +56,41 @@ public class LaunchTest {
         }
         assertEquals("App did not reach the expected screen: " + evaluate(scenario, "location.href"),
             "true", evaluate(scenario, script));
+    }
+
+    @Test
+    public void gameplayRenderingAndTouchWorkOffline() throws Exception {
+        try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+            awaitReady(scenario, "!!window.ThreadNative?.ready");
+            scenario.onActivity(activity -> assertTrue("Game WebView must use hardware acceleration",
+                activity.getBridge().getWebView().isHardwareAccelerated()));
+            evaluate(scenario, "ThreadStorage.setItem('thread-settings',JSON.stringify({music:false,sfx:false,haptics:false}));" +
+                "ThreadNative.navigate('index.html?mode=generated&seed=PERF2026&powers=222222&bonuses=222')");
+            awaitReady(scenario, "!!(window.ThreadNative?.ready && window.frame && game?.running)");
+            String legacy = asset("legacy-frame.js").replaceFirst("function frame", "function");
+            evaluate(scenario, "window.threadLegacyFrame = (" + legacy + ");");
+            evaluate(scenario, asset("render-benchmark.js"));
+            evaluate(scenario, "threadSampleRenderer('previous-renderer', threadLegacyFrame)");
+            awaitReady(scenario, "threadPerfResults.length === 1");
+            screenshot("thread-previous-renderer.png");
+            evaluate(scenario, "threadSampleRenderer('cached-renderer', threadOptimizedFrame)");
+            awaitReady(scenario, "threadPerfResults.length === 2");
+            screenshot("thread-cached-renderer.png");
+            String encoded = evaluate(scenario, "JSON.stringify(threadPerfResults)");
+            String json = new JSONArray("[" + encoded + "]").getString(0);
+            JSONArray samples = new JSONArray(json);
+            for (int i = 0; i < samples.length(); i++) {
+                JSONObject sample = samples.getJSONObject(i);
+                assertTrue("Gameplay must keep rendering", sample.getInt("frames") > 30);
+            }
+            System.out.println("THREAD_RENDER_BENCHMARK=" + json);
+            assertEquals("true", evaluate(scenario, "(() => {" +
+                "game.ringOffset=0;const target=document.querySelector('#canvas');" +
+                "target.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,clientX:100}));" +
+                "target.dispatchEvent(new PointerEvent('pointermove',{bubbles:true,clientX:160}));" +
+                "target.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,clientX:160}));" +
+                "return game.ringOffset===60;})()"));
+        }
     }
 
     @Test

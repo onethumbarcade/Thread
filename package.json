@@ -1,8 +1,8 @@
 {
   "name": "one-thumb-arcade-thread",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
-  "description": "THREAD by One Thumb Arcade — shared web and mobile game",
+  "description": "THREAD by One Thumb Arcade \u2014 shared web and mobile game",
   "engines": {
     "node": ">=22"
   },
