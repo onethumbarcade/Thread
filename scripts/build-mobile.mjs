@@ -23,12 +23,8 @@ for (const file of await readdir(path.join(out, 'assets'))) {
   const target = path.join(out, 'assets', file);
   await writeFile(target, file.endsWith('.js') ? nativeStorage(await readFile(target, 'utf8')) : safeInsets(await readFile(target, 'utf8')));
 }
-let audio;
 for (const [file, page] of [['index.html', 'game'], ['update-2-preview.html', 'menu']]) {
   let html = await readFile(path.join(root, file), 'utf8');
-  html = html.replace(/src="data:audio\/mpeg;base64,([^"]+)"/g, (_, data) => {
-    audio = Buffer.from(data, 'base64'); return 'src="assets/thread-menu.mp3"';
-  });
   const scripts = [], inline = [];
   html = html.replace(/<script\b([^>]*)>([\s\S]*?)<\/script>/g, (_, attributes, content) => {
     const source = attributes.match(/\bsrc="([^"]+)"/);
@@ -46,8 +42,7 @@ for (const [file, page] of [['index.html', 'game'], ['update-2-preview.html', 'm
     .replace('</body>', '<script type="module" src="assets/native-shell.js"></script>\n</body>');
   await writeFile(path.join(out, file), safeInsets(html));
 }
-if (!audio?.length) throw new Error('Missing bundled menu music');
-await writeFile(path.join(out, 'assets/thread-menu.mp3'), audio);
+await stat(path.join(out, 'assets/thread-menu.mp3'));
 await writeFile(path.join(out, 'assets/mobile.css'), safeInsets(await readFile(path.join(root, 'mobile/mobile.css'), 'utf8')));
 await build({ entryPoints: [path.join(root, 'mobile/bootstrap.mjs')],
   outfile: path.join(out, 'assets/native-shell.js'), bundle: true, format: 'esm',

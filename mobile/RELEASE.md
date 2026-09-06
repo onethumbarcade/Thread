@@ -1,5 +1,11 @@
 # Mobile conversion
 
+## Version 0.1.11
+
+- Add Neon Drift, an original mellow electronic theme, to all menu, pause, and result cards.
+- Keep daily and generated gameplay soundtracks unchanged.
+- Bundle one shared audio file and stop card music while the app is in the background.
+
 ## Version 0.1.10
 
 - Extend archive Play and Replay buttons to fill the right-hand action column.
