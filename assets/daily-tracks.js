@@ -75,6 +75,13 @@
     };
   }
 
-  const today = (now = Date.now()) => Math.max(1, Math.floor((Number(now) - Date.UTC(2026, 8, 4)) / 86400000) + 1);
-  globalThis.ThreadDaily = { getTrack, today, randomizedFrom };
+  const timeZone = 'America/Los_Angeles';
+  const calendar = new Intl.DateTimeFormat('en-US', { timeZone, year: 'numeric', month: 'numeric', day: 'numeric' });
+  function today(now = Date.now()) {
+    const parts = Object.fromEntries(calendar.formatToParts(new Date(Number(now))).map(part => [part.type, part.value]));
+    // Count Pacific calendar dates, not elapsed 24-hour periods: DST days vary in length.
+    const date = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day));
+    return Math.max(1, (date - Date.UTC(2026, 8, 4)) / 86400000 + 1);
+  }
+  globalThis.ThreadDaily = { getTrack, today, timeZone, randomizedFrom };
 })();
