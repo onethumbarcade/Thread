@@ -35,6 +35,16 @@ jobs:
       - name: Build Android test APK and unsigned release bundle
         working-directory: android
         run: bash gradlew --no-daemon assembleDebug bundleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: THREAD-Android-test
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        with:
+          name: THREAD-Android-unsigned-release
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
       - name: Enable Android emulator acceleration
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -69,16 +79,6 @@ jobs:
             android-cached-renderer.png
             android/app/build/reports/androidTests/connected/debug/
             android/app/build/outputs/androidTest-results/connected/debug/
-      - uses: actions/upload-artifact@v4
-        with:
-          name: THREAD-Android-test
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          if-no-files-found: error
-      - uses: actions/upload-artifact@v4
-        with:
-          name: THREAD-Android-unsigned-release
-          path: android/app/build/outputs/bundle/release/app-release.aab
-          if-no-files-found: error
   ios:
     runs-on: macos-15
     timeout-minutes: 25

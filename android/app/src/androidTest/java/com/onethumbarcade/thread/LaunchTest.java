@@ -70,12 +70,14 @@ public class LaunchTest {
             String legacy = asset("legacy-frame.js").replaceFirst("function frame", "function");
             evaluate(scenario, "window.threadLegacyFrame = (" + legacy + ");");
             evaluate(scenario, asset("render-benchmark.js"));
-            evaluate(scenario, "threadSampleRenderer('previous-renderer', threadLegacyFrame)");
-            awaitReady(scenario, "threadPerfResults.length === 1");
-            screenshot("thread-previous-renderer.png");
+            System.out.println("THREAD_PROFILE: cached renderer starting");
             evaluate(scenario, "threadSampleRenderer('cached-renderer', threadOptimizedFrame)");
-            awaitReady(scenario, "threadPerfResults.length === 2");
+            awaitReady(scenario, "threadPerfResults.length === 1");
             screenshot("thread-cached-renderer.png");
+            System.out.println("THREAD_PROFILE: cached renderer completed: " + evaluate(scenario, "JSON.stringify(threadPerfResults)"));
+            evaluate(scenario, "threadSampleRenderer('previous-renderer', threadLegacyFrame)");
+            awaitReady(scenario, "threadPerfResults.length === 2");
+            screenshot("thread-previous-renderer.png");
             String encoded = evaluate(scenario, "JSON.stringify(threadPerfResults)");
             String json = new JSONArray("[" + encoded + "]").getString(0);
             JSONArray samples = new JSONArray(json);
