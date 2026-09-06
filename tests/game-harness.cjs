@@ -7,6 +7,7 @@ function element(id) {
   const classes = new Set();
   const drawing = new Proxy({}, { get: (obj, key) => obj[key] || (() => ({ addColorStop() {} })) });
   return {
+    children: [], append(...nodes) { this.children.push(...nodes); }, replaceChildren(...nodes) { this.children = nodes; },
     id, dataset: {}, hidden: false, disabled: false, value: '', textContent: '', plays: 0, pauses: 0, paused: true, currentTime: 0,
     classList: { add: value => classes.add(value), remove: value => classes.delete(value),
       toggle: (value, on) => on ? classes.add(value) : classes.delete(value), contains: value => classes.has(value) },
@@ -44,7 +45,7 @@ function game(search, navigator = {}, height = 844, options = {}) {
   });
   context.window = context;
   for (const id of ['level', 'ring', 'speed', 'score', 'energy']) context[id] = get('#' + id);
-  for (const name of ['menu-music', 'track-options', 'collectibles', 'track-sharing', 'daily-tracks', 'daily-music', 'power-ups', 'result-navigation', 'game-renderer']) vm.runInContext(read(`assets/${name}.js`), context);
+  for (const name of ['menu-music', 'track-options', 'collectibles', 'track-sharing', 'daily-tracks', 'progress', 'progress-ui', 'daily-music', 'power-ups', 'result-navigation', 'game-renderer']) vm.runInContext(read(`assets/${name}.js`), context);
   vm.runInContext(gameScript, context);
   let time = 0;
   return { context, get, storage, session, history, listeners, step(dt = .016) { time += dt * 1000; vm.runInContext(`frame(${time})`, context); } };

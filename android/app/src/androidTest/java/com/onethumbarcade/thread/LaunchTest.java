@@ -85,6 +85,38 @@ public class LaunchTest {
     }
 
     @Test
+    public void achievementsPersistAfterCompletedRun() throws Exception {
+        try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
+            awaitReady(scenario, "!!window.ThreadNative?.ready");
+            evaluate(scenario, "ThreadStorage.removeItem('thread-progress-v1');" +
+                "ThreadStorage.setItem('thread-settings',JSON.stringify({music:false,sfx:false,haptics:false,reduced:true}));" +
+                "ThreadNative.navigate('index.html?mode=generated&seed=FRUIT2026')");
+            awaitReady(scenario, "!!(window.ThreadNative?.ready && window.frame && game?.running)");
+            evaluate(scenario, "game.fruitsCollected=99;collectReward(game,'cake',width/2,height/2);" +
+                "game.energy=0;game.ringOffset=width*2");
+            awaitReady(scenario, "!!(!game.running && ThreadProgress.snapshot().fruits===100 && !document.querySelector('#result').classList.contains('hidden'))");
+            assertEquals("true", evaluate(scenario, "document.querySelector('#result-milestones').textContent.includes('Fruit Collector') && " +
+                "!document.querySelector('#result-milestones').classList.contains('celebrate')"));
+            SystemClock.sleep(350);
+            screenshot("thread-milestone.png");
+            evaluate(scenario, "document.querySelector('#result-achievements').click()");
+            awaitReady(scenario, "!!document.querySelector('#achievements.active')");
+            assertEquals("true", evaluate(scenario, "[...document.querySelectorAll('.achievement.unlocked')].some(b=>b.textContent.includes('Fruit Collector'))"));
+            SystemClock.sleep(350);
+            screenshot("thread-achievements.png");
+            evaluate(scenario, "ThreadNative.navigate('update-2-preview.html')");
+            awaitReady(scenario, "!!(window.ThreadNative?.ready && document.querySelector('#home.active'))");
+        }
+        try (ActivityScenario<MainActivity> relaunched = ActivityScenario.launch(MainActivity.class)) {
+            awaitReady(relaunched, "!!(window.ThreadNative?.ready && document.querySelector('#home.active'))");
+            evaluate(relaunched, "document.querySelector('#home [data-go=achievements]').click()");
+            awaitReady(relaunched, "!!document.querySelector('#achievements.active')");
+            assertEquals("true", evaluate(relaunched, "ThreadProgress.snapshot().fruits===100 && " +
+                "[...document.querySelectorAll('.achievement.unlocked')].some(b=>b.textContent.includes('Fruit Collector'))"));
+        }
+    }
+
+    @Test
     public void pauseButtonFreezesAndResumesGameplay() throws Exception {
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
             awaitReady(scenario, "!!window.ThreadNative?.ready");

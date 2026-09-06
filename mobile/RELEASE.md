@@ -1,5 +1,13 @@
 # Mobile conversion
 
+## Version 0.1.18
+
+- Track completed daily runs as a streak using Pacific calendar dates.
+- Add First Thread, Week of Thread, Fruit Collector, Level Five, and Archive Explorer badges with visible progress.
+- Celebrate newly earned badges and streak milestones on the result card, with sound and reduced-motion preferences respected.
+- Carry known completed daily scores into applicable badges; streak dates and fruit totals start with this update.
+- Keep progress in native Preferences and restore result cards without awarding a run twice.
+
 ## Version 0.1.17
 
 - Add a custom-track slider for 10,000–30,000 points per level, defaulting to 20,000.

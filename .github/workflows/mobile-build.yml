@@ -84,6 +84,8 @@ jobs:
             adb pull /sdcard/Download/thread-paused.png android-paused.png
             adb pull /sdcard/Download/thread-leaderboard.png android-leaderboard.png
             adb pull /sdcard/Download/thread-today.png android-today.png
+            adb pull /sdcard/Download/thread-achievements.png android-achievements.png
+            adb pull /sdcard/Download/thread-milestone.png android-milestone.png
             adb pull /sdcard/Download/thread-previous-renderer.png android-previous-renderer.png
             adb pull /sdcard/Download/thread-cached-renderer.png android-cached-renderer.png
             adb install -r android/app/build/outputs/apk/debug/app-debug.apk
@@ -98,6 +100,8 @@ jobs:
             android-paused.png
             android-leaderboard.png
             android-today.png
+            android-achievements.png
+            android-milestone.png
             android-previous-renderer.png
             android-cached-renderer.png
             android/app/build/reports/androidTests/connected/debug/

@@ -681,7 +681,8 @@
     </style>
     <link rel="stylesheet" href="assets/menu-panels.css?v=track-options-1" />
       <link rel="stylesheet" href="assets/leaderboard.css?v=play-flags-1">
-  </head>
+  <link rel="stylesheet" href="assets/progress.css?v=retention-1">
+</head>
   <body>
     <main class="game">
       <canvas
@@ -758,6 +759,11 @@
         <div class="result-best">DEVICE BEST <b id="result-best">0</b></div>
         <p class="result-ranking" id="result-ranking" role="status" aria-live="polite"></p>
         <a class="result-board-link" id="result-board-link" hidden>VIEW GLOBAL LEADERBOARD</a>
+        <div class="run-progress">
+          <div class="milestone-banner" id="result-milestones" role="status" aria-live="polite" hidden></div>
+          <p id="result-progress-status"></p>
+          <button id="result-achievements">VIEW ACHIEVEMENTS</button>
+        </div>
         <div class="result-actions">
           <button id="again">TRY AGAIN</button>
           <button id="home-button">HOME</button>
@@ -772,6 +778,7 @@
         <div class="thread-menu-shell">
           <header class="thread-menu-topbar" data-thread-brand></header>
           <section class="thread-menu-card view active" id="options" data-thread-panel="options" data-options-return="results"></section>
+          <section class="thread-menu-card view" id="achievements" data-thread-panel="achievements" data-options-return="results"></section>
           <section class="thread-menu-card view" id="scoring" data-thread-panel="scoring"></section>
         </div>
       </div>
@@ -783,9 +790,11 @@
       src="assets/thread-menu.mp3?v=neon-current-1"
     ></audio>
     <script src="assets/menu-music.js?v=continuous-1"></script>
-    <script src="assets/menu-panels.js?v=level-score-1"></script>
+    <script src="assets/menu-panels.js?v=retention-1"></script>
     <script src="assets/track-sharing.js?v=level-score-1"></script>
     <script src="assets/daily-tracks.js?v=pacific-midnight-1"></script>
+  <script src="assets/progress.js?v=retention-1"></script>
+  <script src="assets/progress-ui.js?v=retention-1"></script>
     <script src="assets/game-renderer.js?v=star-3-cached-neon-1"></script>
     <script src="assets/leaderboard.js?v=native-app-1"></script>
     <script src="assets/result-navigation.js?v=native-app-1"></script>
@@ -958,6 +967,7 @@
           ringOffset: 0,
           distance: 0,
           score: 0,
+          fruitsCollected: 0,
           ringRadius: dailyTrack?.startSize || 34,
           energy: 100,
           speed: dailyTrack?.startSpeed || 54,
@@ -1037,6 +1047,8 @@
           tone(1350, .09, "sawtooth", .018, 0, 340);
         } else if (k === "blast") {
           tone(190, .12, "triangle", .045, 0, 65);
+        } else if (k === "milestone") {
+          [660, 880, 1320, 1760].forEach((f, i) => tone(f, .22, "sine", .04, i * .09));
         } else if (k === "power") {
           [660, 880, 1320].forEach((f, i) => tone(f, .13, "triangle", .06, i * .06));
         } else
@@ -1073,7 +1085,10 @@
           if (outcome === "unavailable" && session === musicSession) musicStarted = false;
         });
       }
-      function showResult(isBest) {
+      function showResult(isBest, celebrate = false) {
+        ThreadProgressUI.renderResult(game.progressReport, { animate: celebrate && !settings.reduced });
+        if (celebrate && game.progressReport?.events.length) sound("milestone");
+        result.scrollTop = 0;
         document.querySelector("#pause-game").hidden = true;
         const runScore = Math.floor(game.score);
         newBest.textContent = runScore.toLocaleString();
@@ -1103,7 +1118,7 @@
         const { score, distance, ringRadius, ringOffset, speed, elapsed } = game;
         completedResult = ThreadResultNavigation.save({
           track: Number(runTrack), score, distance, ringRadius, ringOffset, speed, elapsed,
-          best, isBest, ranking: document.querySelector("#result-ranking").textContent,
+          best, isBest, ranking: document.querySelector("#result-ranking").textContent, progress: game.progressReport,
         }, completedResult);
         if (completedResult) document.querySelector("#result-board-link").href = ThreadResultNavigation.leaderboardUrl(completedResult);
       }
@@ -1133,6 +1148,7 @@
         game.running = false;
         game.energy = 0;
         game.stage = Math.floor(game.score / runOptions.levelScore) + 1;
+        game.progressReport = saved.progress;
         extend(game.nodes, game.distance + height * 2, game.random);
         best = saved.best;
         started = true;
@@ -1227,6 +1243,7 @@
           dailyTrack?.shapes || null,
         );
         game.elapsed = 0;
+        game.progressRun = ThreadProgress.startRun(runMode, runTrack);
         rankedSession = runMode === "daily" ? globalThis.ThreadLeaderboard?.startRun(Number(runTrack)) : null;
         document.querySelector("#result-ranking").textContent = "";
         const boardLink = document.querySelector("#result-board-link");
@@ -1305,7 +1322,14 @@
             refreshOptions();
           }),
       );
+      document.querySelector("#result-achievements").onclick = () => {
+        optionsReturn = result;
+        result.classList.add("hidden");
+        showOptionsPanel("achievements");
+        optionsCard.classList.remove("hidden");
+      };
       function showOptionsPanel(id) {
+        if (id === "achievements") ThreadProgressUI.refresh();
         optionsCard.querySelectorAll(".view").forEach((panel) => {
           panel.classList.toggle("active", panel.id === id);
         });
@@ -1411,6 +1435,7 @@
           g.flash = 1;
           effect(g, x, y - 28, g.ringRadius === MAX_TRACKER_RADIUS ? "MAX SIZE" : `+${GROWTH_ORB_AMOUNT} SIZE`, "#ffd447");
         }
+        if (!orb && POINTS[kind] > 0) g.fruitsCollected = (g.fruitsCollected || 0) + 1;
         g.score += points;
         sound(orb ? "orb" : "fruit");
         buzz(orb ? 12 : 18);
@@ -1557,7 +1582,8 @@
                 localStorage.setItem(bestStorageKey, best);
               } catch (e) {}
             }
-            showResult(isBest);
+            g.progressReport = ThreadProgress.finishRun(g.progressRun, { score: runScore, fruits: g.fruitsCollected });
+            showResult(isBest, true);
             const finishedSession = rankedSession;
             const rankingStatus = document.querySelector("#result-ranking");
             if (finishedSession) {

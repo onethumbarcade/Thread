@@ -106,3 +106,22 @@ test('native sharing and navigation use the native adapters', async () => {
   assert.deepEqual(calls, [['navigate', 'capacitor://localhost/index.html?mode=daily&track=2'],
     ['share', 'onethumbarcade-thread://play?mode=daily&track=2']]);
 });
+
+
+test('achievement progress survives native Preferences flush and a fresh app launch', async () => {
+  const { createStorage } = await import('../mobile/storage.mjs');
+  let saved = null;
+  const preferences = { async get() { return { value: saved }; }, async set({ value }) { saved = value; } };
+  const native = await createStorage(preferences);
+  const context = vm.createContext({});
+  for (const name of ['daily-tracks','progress']) vm.runInContext(fs.readFileSync(path.join(__dirname, `../assets/${name}.js`), 'utf8'), context);
+  const now = () => Date.parse('2026-09-06T19:00:00Z');
+  const first = context.ThreadProgress.create({ storage: native, now });
+  first.finishRun(first.startRun('daily', 3), { score: 96000, fruits: 100 });
+  await native.flush();
+  const relaunched = context.ThreadProgress.create({ storage: await createStorage(preferences), now });
+  const state = relaunched.snapshot();
+  assert.equal(state.fruits, 100);
+  assert.equal(state.streak.current, 1);
+  assert.equal(state.achievements.filter(b => b.unlocked).length, 3);
+});
