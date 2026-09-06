@@ -38,7 +38,7 @@
     .guide-head{position:relative;display:flex;align-items:center;justify-content:center;min-height:48px;margin-bottom:18px}.guide-head .back{position:absolute;left:0;top:2px}.guide-title{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 24px;border:1px solid #ff8ae8;border-radius:999px;background:#e934b8;color:#fff;font-size:16px;font-weight:1000;letter-spacing:2px;box-shadow:0 0 18px #ff48ce77,inset 0 1px #fff7;text-align:center}
   </style>
   <link rel="stylesheet" href="assets/menu-panels.css?v=track-options-1">
-  <link rel="stylesheet" href="assets/leaderboard.css?v=threader-centered-1">
+  <link rel="stylesheet" href="assets/leaderboard.css?v=archive-ranks-1">
 </head>
 <body>
   <div class="stars" aria-hidden="true"></div>
@@ -87,12 +87,13 @@
     </section>
     <section class="card view" id="archive">
       <div class="guide-head"><button class="back" data-go="home">‹</button><div class="guide-title">TRACK ARCHIVE</div></div>
-      <div class="archive-tools"><button class="pill on">RECENT</button><button class="pill">COMPLETED</button><button class="pill">CALENDAR</button></div>
+      <div class="archive-tools" aria-label="Sort tracks"><button class="pill on" id="archive-recent" aria-pressed="true">RECENT</button><button class="pill" id="archive-unplayed" aria-pressed="false">NOT PLAYED</button></div>
       <p class="leaderboard-status score-sync-status" id="archive-score-status" role="status"></p>
       <div class="archive-table" role="table" aria-label="Track archive">
-        <div class="archive-columns" role="row"><span role="columnheader">Track #</span><span role="columnheader">Personal Record</span><span role="columnheader" aria-label="Play track"></span></div>
+        <div class="archive-columns" role="row"><span role="columnheader">Track #</span><span role="columnheader">Personal Best</span><span role="columnheader">Global Rank</span><span role="columnheader" aria-label="Play track"></span></div>
         <div class="archive-list" id="archive-list" role="rowgroup"></div>
       </div>
+      <nav class="archive-pagination" aria-label="Track archive pages"><button class="pill" id="archive-prev" disabled>PREVIOUS</button><span id="archive-page" role="status">Page 1 of 1</span><button class="pill" id="archive-next" disabled>NEXT</button></nav>
     </section>
     <section class="card view" id="leaderboard">
       <div class="guide-head"><button class="back" id="leaderboard-back" data-go="home">‹</button><h2 class="guide-title">LEADERBOARDS</h2></div>
@@ -117,7 +118,7 @@
   <script src="assets/menu-panels.js?v=track-options-1"></script>
   <script src="assets/track-sharing.js?v=native-app-1"></script>
   <script src="assets/daily-tracks.js?v=pacific-midnight-1"></script>
-  <script src="assets/leaderboard.js?v=native-app-1"></script>
+  <script src="assets/leaderboard.js?v=archive-ranks-1"></script>
   <script src="assets/power-ups.js?v=track-options-1"></script>
   <script src="assets/track-options.js?v=daily-variety-2"></script>
   <script src="assets/power-up-menu.js?v=track-options-1"></script>
@@ -150,18 +151,12 @@
     };
     addEventListener('thread:app-state',event=>event.detail.isActive?syncMusic():menuMusic.pause());
     const playDaily=n=>ThreadTracks.navigate(`index.html?mode=daily&track=${n}`);
-    const list=document.querySelector('#archive-list');
-    for(let i=0;i<24;i++){
-      const n=day-i;if(n<1)break;
-      const row=document.createElement('div');row.className='row'+(i===0?' today':'');row.setAttribute('role','row');
-      row.innerHTML=`<div role="cell"><strong>#${n}</strong></div><div role="cell"><span class="best" data-ranked-best="${n}">—</span></div><div role="cell"><button aria-label="Replay track ${n}">REPLAY</button></div>`;
-      row.querySelector('button').onclick=()=>playDaily(n);list.appendChild(row);
-    }
     document.querySelector('#play-daily').onclick=()=>playDaily(ThreadDaily.today());
     addEventListener('visibilitychange',()=>{if(!document.hidden && ThreadDaily.today()!==day)location.reload()});
   </script>
   <script src="assets/result-navigation.js?v=native-app-1"></script>
-  <script src="assets/leaderboard-menu.js?v=leaderboard-play-1"></script>
+  <script src="assets/track-archive.js?v=archive-ranks-1"></script>
+  <script src="assets/leaderboard-menu.js?v=archive-ranks-1"></script>
   <script src="assets/generated-track-menu.js?v=native-app-1"></script>
 </body>
 </html>

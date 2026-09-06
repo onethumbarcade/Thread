@@ -19,7 +19,7 @@
     });
   }
   function scoreStatus(message) {
-    $('archive-score-status').textContent = message;
+    if (!globalThis.ThreadTrackArchive) $('archive-score-status').textContent = message;
     $('today-score-status').textContent = message;
   }
   async function loadScores() {
@@ -63,7 +63,7 @@
       if (data.yours && !data.entries.some(entry => entry.isYou)) $('board-yours').appendChild(row(data.yours));
       else if (!data.yours) { const empty = document.createElement('p'); empty.className = 'board-empty'; empty.textContent = 'Your ranked score will appear here after you finish a daily track.'; $('board-yours').appendChild(empty); }
       $('board-yours').hidden = data.yours && data.entries.some(entry => entry.isYou);
-      status.textContent = `Updated ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} · Top 50 players`;
+      status.textContent = `Updated ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} · Top 50 Threaders`;
     } catch { if (version === revision) status.textContent = 'Rankings are unavailable right now. Tap Refresh to try again.'; }
     finally { if (version === revision) $('board-entries').setAttribute('aria-busy', 'false'); }
   }
@@ -73,7 +73,8 @@
     activeView = view;
     if (view !== 'leaderboard') resultReturn = null;
     backButton.setAttribute('aria-label', resultReturn ? 'Back to game summary' : 'Back to home');
-    if (view === 'today' || view === 'archive') loadScores();
+    if (view === 'today' || (view === 'archive' && !globalThis.ThreadTrackArchive)) loadScores();
+    globalThis.ThreadTrackArchive?.setActive(view === 'archive');
     if (view !== 'leaderboard') { revision++; return; }
     fillTracks(); loadBoard();
   }
@@ -82,6 +83,6 @@
     if (Number.isSafeInteger(requested) && requested > 0 && requested <= ThreadDaily.today()) currentTrack = requested;
     show('leaderboard');
   }
-  addEventListener('online', () => { if (activeView === 'leaderboard') loadBoard(); else loadScores(); });
+  addEventListener('online', () => { if (activeView === 'leaderboard') loadBoard(); else if (activeView === 'archive') globalThis.ThreadTrackArchive?.open(); else loadScores(); });
   loadScores();
 })();

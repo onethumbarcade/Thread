@@ -1,5 +1,11 @@
 # Mobile conversion
 
+## Version 0.1.7
+
+- Add global rank beside personal best in the track archive.
+- Add Recent and Not Played sorting and 20-track pages covering every released track.
+- Use “Top 50 Threaders” on leaderboards.
+
 ## Version 0.1.6
 
 - Center the Threader ID column heading and player IDs on the leaderboard, including YOU.

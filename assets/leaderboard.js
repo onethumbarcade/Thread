@@ -11,12 +11,20 @@
   }
   // Only server responses populate the shared best-score view. Device records
   // remain separate, including runs from before global rankings existed.
-  const rankedBests = new Map(), listeners = new Set();
+  const rankedBests = new Map(), rankedPlaces = new Map(), playedTracks = new Set(), listeners = new Set();
   const notify = () => listeners.forEach(listener => listener());
   const rememberBest = (track, score) => rankedBests.set(track, Math.max(rankedBests.get(track) || 0, score));
+  function rememberRecord(track, score, rank) {
+    const previous = rankedBests.get(track) || 0;
+    if (score < previous) return;
+    rememberBest(track, score);
+    if (score > previous) rankedPlaces.delete(track);
+    if (Number.isSafeInteger(rank) && rank > 0) rankedPlaces.set(track, rank);
+    if (score > 0) playedTracks.add(track);
+  }
   function acceptBoard(data) {
     if (data.board !== 'daily' || !Number.isSafeInteger(data.track)) return;
-    rememberBest(data.track, data.yours?.score || 0);
+    rememberRecord(data.track, data.yours?.score || 0, data.yours?.rank);
     notify();
   }
   async function request(body, query = '') {
@@ -56,6 +64,7 @@
   function startRun(track) {
     // Resolve failure into the session so the render loop never sees a rejected promise.
     const rulesVersion = globalThis.ThreadDaily?.getTrack(track).version || 1;
+    playedTracks.add(track);
     const session = { track, ready: request({ action: 'start', track, rulesVersion }).catch(error => ({ error })) };
     return session;
   }
@@ -85,13 +94,31 @@
     const promise = request(null, `?board=personal&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`).then(data => {
       if (!Array.isArray(data.bests) || data.from !== from || data.to !== to) throw new Error('Global scores are unavailable.');
       const results = new Map(data.bests.map(row => [row.track, row.score]));
-      for (let track = from; track <= to; track++) rememberBest(track, results.get(track) || 0);
+      for (let track = from; track <= to; track++) rememberRecord(track, results.get(track) || 0);
       notify(); return data;
     }).finally(() => { if (bestRequest?.promise === promise) bestRequest = null; });
     bestRequest = { key, promise }; return promise;
   }
+  async function loadBestsFor(tracks) {
+    const data = await request(null, '?board=personal&tracks=' + encodeURIComponent(tracks.join(',')));
+    if (!Array.isArray(data.bests) || JSON.stringify(data.tracks) !== JSON.stringify(tracks)) throw new Error('Global ranks are unavailable.');
+    const records = new Map(data.bests.map(row => [row.track, row]));
+    for (const track of tracks) {
+      const row = records.get(track);
+      rememberRecord(track, row?.score || 0, row?.rank);
+    }
+    notify(); return data;
+  }
+  async function loadPlayed() {
+    const data = await request(null, '?board=played');
+    if (!Array.isArray(data.played)) throw new Error('Played tracks are unavailable.');
+    for (const track of data.played) if (Number.isSafeInteger(track) && track > 0) playedTracks.add(track);
+    return data;
+  }
+  const rankFor = track => rankedPlaces.get(Number(track));
+  const hasPlayed = track => playedTracks.has(Number(track));
   const bestFor = track => rankedBests.get(Number(track));
   const subscribe = listener => { listeners.add(listener); return () => listeners.delete(listener); };
   addEventListener('online', flush);
-  globalThis.ThreadLeaderboard = { board, startRun, finishRun, flush, loadBests, bestFor, subscribe };
+  globalThis.ThreadLeaderboard = { board, startRun, finishRun, flush, loadBests, loadBestsFor, loadPlayed, bestFor, rankFor, hasPlayed, subscribe };
 })();
