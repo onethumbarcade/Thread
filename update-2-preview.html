@@ -22,8 +22,9 @@
     #home .mode[data-go="generate"] small{color:#2b1848}
     #home .mode[data-go="archive"],#home .mode[data-go="leaderboard"]{color:#07142c;border-color:#d9f4ff;background:var(--thread-blue-gradient);box-shadow:0 6px 0 #304f8f,0 0 23px #739dff44}
     #home .mode[data-go="archive"] small,#home .mode[data-go="leaderboard"] small{color:#182d52}
+    #today{--neon:#45f0dd}
     #today .daily-note{margin-top:26px;font-size:13px;line-height:1.5}
-    #today .fingerprint>span{display:grid;grid-template-rows:minmax(2.4em,auto) auto;font-size:13px;line-height:1.2;letter-spacing:.45px}
+    #today .fingerprint>span{display:grid;grid-template-rows:minmax(2.4em,auto) auto;font-size:13px;line-height:1.2;letter-spacing:.45px;border-color:var(--neon);box-shadow:0 0 22px color-mix(in srgb,var(--neon) 28%,transparent)}
     #today .fingerprint .stat-label{font:inherit;align-self:center}
     .hero .daily-frequencies{display:grid;gap:3px;margin:12px 0 0;padding-top:12px;border-top:1px solid #55f4e633;color:#a9bedc;font-size:13px;line-height:1.6;text-align:left}
     .daily-frequencies .frequency-row{display:flex;align-items:baseline;gap:8px}
@@ -40,7 +41,7 @@
     .guide-head{position:relative;display:flex;align-items:center;justify-content:center;min-height:48px;margin-bottom:18px}.guide-head .back{position:absolute;left:0;top:2px}.guide-title{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:10px 24px;border:1px solid #ff8ae8;border-radius:999px;background:#e934b8;color:#fff;font-size:16px;font-weight:1000;letter-spacing:2px;box-shadow:0 0 18px #ff48ce77,inset 0 1px #fff7;text-align:center}
   </style>
   <link rel="stylesheet" href="assets/menu-panels.css?v=thread-logo-1">
-  <link rel="stylesheet" href="assets/leaderboard.css?v=table-spacing-1">
+  <link rel="stylesheet" href="assets/leaderboard.css?v=board-status-center-1">
 <link rel="icon" type="image/png" href="assets/thread-icon.png">
 </head>
 <body>
@@ -59,7 +60,7 @@
     </section>
     <section class="card view" id="today">
       <div class="guide-head"><button class="back" data-go="home">‹</button><div class="guide-title" id="today-id">TODAY’S TRACK: #1</div></div>
-      <div class="hero" style="--neon:#45f0dd"><div class="date" id="today-date"></div><h3>THE DAILY THREAD</h3><p id="daily-rules">One laser. One layout. One worldwide leaderboard.</p><dl class="daily-frequencies" id="daily-frequencies" aria-label="Item frequencies"></dl></div>
+      <div class="hero"><div class="date" id="today-date"></div><h3>THE DAILY THREAD</h3><p id="daily-rules">One laser. One layout. One worldwide leaderboard.</p><dl class="daily-frequencies" id="daily-frequencies" aria-label="Item frequencies"></dl></div>
       <div class="fingerprint"><span><small class="stat-label">STARTING SHAPE</small><b id="track-code">—</b></span><span><small class="stat-label">ATTEMPTS</small><b id="attempts">0</b></span><span><small class="stat-label">PERSONAL BEST</small><b id="daily-best">—</b></span></div>
       <p class="leaderboard-status score-sync-status" id="today-score-status" role="status"></p>
       <button class="action" id="play-daily">PLAY TODAY’S TRACK</button>
