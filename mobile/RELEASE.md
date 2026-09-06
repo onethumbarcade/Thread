@@ -1,5 +1,10 @@
 # Mobile conversion
 
+## Version 0.1.16
+
+- Center the update time and Top 50 Threaders status across the Leaderboard card.
+- Match the three Today's Track stat-box borders and glow to the neon track-description panel.
+
 ## Version 0.1.15
 
 - Fill the pause button with the current laser color, updating automatically with each level.

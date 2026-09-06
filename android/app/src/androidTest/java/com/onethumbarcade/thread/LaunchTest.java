@@ -227,6 +227,10 @@ public class LaunchTest {
                     "document.querySelector('#board-track-select').onchange()");
                 assertEquals("true", evaluate(scenario, "document.querySelector('#board-play').getAttribute('href')==='index.html?mode=daily&track=1'"));
                 screenshot("thread-leaderboard.png");
+                evaluate(scenario, "show('today')");
+                awaitReady(scenario, "!!document.querySelector('#today.active')");
+                SystemClock.sleep(350); // Let the card entrance animation finish before capture.
+                screenshot("thread-today.png");
                 evaluate(scenario, "show('home')");
                 evaluate(scenario, "document.querySelector('#home [data-go=generate]').click()");
                 awaitReady(scenario, "!!document.querySelector('#generate.active')");

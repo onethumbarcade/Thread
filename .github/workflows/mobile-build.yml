@@ -83,6 +83,7 @@ jobs:
             bash android/gradlew -p android --no-daemon :app:connectedDebugAndroidTest
             adb pull /sdcard/Download/thread-paused.png android-paused.png
             adb pull /sdcard/Download/thread-leaderboard.png android-leaderboard.png
+            adb pull /sdcard/Download/thread-today.png android-today.png
             adb pull /sdcard/Download/thread-previous-renderer.png android-previous-renderer.png
             adb pull /sdcard/Download/thread-cached-renderer.png android-cached-renderer.png
             adb install -r android/app/build/outputs/apk/debug/app-debug.apk
@@ -96,6 +97,7 @@ jobs:
             android-launch.png
             android-paused.png
             android-leaderboard.png
+            android-today.png
             android-previous-renderer.png
             android-cached-renderer.png
             android/app/build/reports/androidTests/connected/debug/

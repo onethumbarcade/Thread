@@ -7,6 +7,7 @@
 .board-yours[hidden]{display:none}.score-sync-status:empty{display:none}
 
 #leaderboard .guide-title{margin:0}
+#board-status{text-align:center}
 
 .archive-columns,#archive .row{grid-template-columns:minmax(36px,.65fr) minmax(0,1.3fr) minmax(0,1fr) minmax(64px,.9fr);gap:8px;padding-right:10px;padding-left:10px}
 .archive-columns{display:grid;gap:8px;align-items:center;padding:8px 12px;margin:0 0 4px;border:1px solid transparent;color:#9daed0;font-size:12px;font-weight:800;line-height:1.4}
