@@ -8,7 +8,7 @@
           bottom = height - 150,
           ringY = Math.min(height * 0.6, height - 225),
           cr = Math.min(width * 0.4, 190),
-          stage = Math.floor(g.score / (dailyTrack?.levelScore || STAGE)) + 1,
+          stage = Math.floor(g.score / runOptions.levelScore) + 1,
           s = g.shapeSequence ? g.shapeSequence[(stage - 1) % g.shapeSequence.length] : (stage - 1 + (g.shapeOffset || 0)) % 4,
           z = Math.max(0.74, 1 - (stage - 1) * 0.024),
           sw = [1, 0.92, 0.68, TRIANGLE_REACH][s] * z,
@@ -112,7 +112,7 @@
                 }
               }
             }
-          const ns = Math.floor(g.score / (dailyTrack?.levelScore || STAGE)) + 1;
+          const ns = Math.floor(g.score / runOptions.levelScore) + 1;
           if (ns > g.stage) {
             g.stage = ns;
             sound("level");
