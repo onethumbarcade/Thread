@@ -47,6 +47,9 @@
     score.textContent = entry.score.toLocaleString(); el.append(rank, name, score); return el;
   }
   async function loadBoard() {
+    const play = $('board-play');
+    play.href = `index.html?mode=daily&track=${currentTrack}`;
+    play.setAttribute('aria-label', `Play Track #${currentTrack}`);
     const version = ++revision;
     status.textContent = 'Loading worldwide rankings…';
     $('board-entries').setAttribute('aria-busy', 'true');

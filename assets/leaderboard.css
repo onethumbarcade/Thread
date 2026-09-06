@@ -21,3 +21,7 @@
 .board-columns{padding-top:8px;padding-bottom:8px;color:#9daed0;font-size:12px;font-weight:800;line-height:1.4}
 .board-columns> :last-child,.board-table .rank> :last-child{text-align:right}
 @media(max-width:380px){.board-table{--rank-column:30px;--score-column:74px;--board-gap:6px}.board-columns{font-size:11px}}
+
+.board-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+.board-actions .action{display:flex;align-items:center;justify-content:center;min-width:0;width:100%;margin:0;padding:12px 8px;font-size:14px;line-height:1.3;text-align:center;text-decoration:none}
+.board-play:focus-visible{outline:3px solid #fff;outline-offset:4px}
