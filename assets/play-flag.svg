@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs><pattern id="checks" x="4" y="3" width="8" height="8" patternUnits="userSpaceOnUse"><path d="M0 0h4v4H0zM4 4h4v4H4z" fill="#07142c"/></pattern></defs>
+  <path d="M4 22V3" fill="none" stroke="#07142c" stroke-width="2" stroke-linecap="round"/>
+  <path d="M4 4c6-4 11 4 17 0v12c-6 4-11-4-17 0Z" fill="url(#checks)" stroke="#07142c" stroke-width="1.5" stroke-linejoin="round"/>
+</svg>
