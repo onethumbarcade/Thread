@@ -1,12 +1,15 @@
 // Portable settings for generated courses. A shared link contains the full setup.
 (() => {
-  const defaults = { powers: "222222", shapes: "0123", bonuses: "222" };
+  const defaults = { powers: "222222", shapes: "0123", bonuses: "222", levelScore: 20000 };
+  const levelScoreRange = { min: 10000, max: 30000, step: 1000 };
   const shapeNames = ["Square", "Circle", "Diamond", "Triangle"];
   function normalize(value = {}) {
+    const levelScore = Number(value?.levelScore);
     return {
       powers: /^[0-3]{6}$/.test(value?.powers) ? value.powers : defaults.powers,
       shapes: /^[0-3]{1,8}$/.test(value?.shapes) ? value.shapes : defaults.shapes,
       bonuses: /^[0-3]{3}$/.test(value?.bonuses) ? value.bonuses : defaults.bonuses,
+      levelScore: Number.isInteger(levelScore) && levelScore >= levelScoreRange.min && levelScore <= levelScoreRange.max && levelScore % levelScoreRange.step === 0 ? levelScore : defaults.levelScore,
     };
   }
   function read() {
@@ -22,7 +25,7 @@
   }
   function fromUrl(params) {
     // Links with settings are self-contained; a bare track code uses local choices.
-    const shared = ["powers", "shapes", "bonuses"].some(key => params.has(key));
+    const shared = Object.keys(defaults).some(key => params.has(key));
     const result = shared ? { ...defaults } : read();
     for (const key of Object.keys(defaults)) if (params.has(key)) result[key] = params.get(key);
     return normalize(result);
@@ -33,11 +36,14 @@
       ? `${shapeNames[+shapes]} every level.`
       : `${shapes.split("").map(shape => shapeNames[+shape]).join(" → ")}. Repeats each level.`;
   }
+  function describeLevelScore(value) {
+    return `New level every ${normalize(value).levelScore.toLocaleString()} points.`;
+  }
   function describeFrequencies(value) {
     const options = normalize(value), labels = ["Off", "Rare", "Normal", "Often"];
     const bonuses = ["Growth Orbs", "Fruit", "Bombs"].map((name, i) => `${name}: ${labels[+options.bonuses[i]]}`).join(" · ");
     const powers = new Set(options.powers).size === 1 ? labels[+options.powers[0]] : ["Star", "Blaster", "Magnet", "Slow Motion", "Double Points", "Energy Cell"].map((name, i) => `${name} ${labels[+options.powers[i]]}`).join(", ");
     return `${bonuses}. Power-ups: ${powers}.`;
   }
-  globalThis.ThreadTrackOptions = { defaults, shapeNames, normalize, read, save, fromUrl, describe, describeFrequencies };
+  globalThis.ThreadTrackOptions = { defaults, levelScoreRange, shapeNames, normalize, read, save, fromUrl, describe, describeLevelScore, describeFrequencies };
 })();

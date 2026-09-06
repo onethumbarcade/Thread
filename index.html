@@ -783,14 +783,14 @@
       src="assets/thread-menu.mp3?v=neon-current-1"
     ></audio>
     <script src="assets/menu-music.js?v=continuous-1"></script>
-    <script src="assets/menu-panels.js?v=track-options-1"></script>
-    <script src="assets/track-sharing.js?v=native-app-1"></script>
+    <script src="assets/menu-panels.js?v=level-score-1"></script>
+    <script src="assets/track-sharing.js?v=level-score-1"></script>
     <script src="assets/daily-tracks.js?v=pacific-midnight-1"></script>
     <script src="assets/game-renderer.js?v=star-3-cached-neon-1"></script>
     <script src="assets/leaderboard.js?v=native-app-1"></script>
     <script src="assets/result-navigation.js?v=native-app-1"></script>
     <script src="assets/daily-music.js?v=generated-music-1"></script>
-    <script src="assets/track-options.js?v=daily-variety-2"></script>
+    <script src="assets/track-options.js?v=level-score-1"></script>
     <script src="assets/collectibles.js"></script>
     <script src="assets/power-ups.js?v=track-options-1"></script>
     <script>
@@ -800,7 +800,6 @@
         GROWTH_ORB_RADIUS = 11,
         GROWTH_ORB_AMOUNT = 11,
         MAX_TRACKER_RADIUS = 72,
-        STAGE = 20000,
         LASERS = [
           ["#55f7d5", "#2affdf"],
           ["#32cfff", "#00bfff"],
@@ -812,7 +811,7 @@
           cherry: "🍒",
           strawberry: "🍓",
           banana: "🍌",
-          cake: "🍰",
+          cake: "🍍", // Legacy item key preserves existing daily courses; now shown as pineapple.
           bomb: "💣",
         },
         POINTS = { cherry: 100, strawberry: 125, banana: 150, cake: 250 },
@@ -850,7 +849,7 @@
         runTrack = runMode === "daily" ? String(ThreadDaily.getTrack(runParams.get("track") || ThreadDaily.today()).id) : null,
         runCode = runParams.get("seed"),
         dailyTrack = runMode === "daily" ? ThreadDaily.getTrack(runTrack) : null,
-        initialOptions = dailyTrack ? ThreadTrackOptions.normalize(dailyTrack.options) : ThreadTrackOptions.fromUrl(runParams),
+        initialOptions = dailyTrack ? ThreadTrackOptions.normalize({ ...dailyTrack.options, levelScore: dailyTrack.levelScore }) : ThreadTrackOptions.fromUrl(runParams),
         bestStorageKey =
           runMode === "daily" && runTrack
             ? `thread-daily-${runTrack}`
@@ -1133,7 +1132,7 @@
         for (const key of ["score", "distance", "ringRadius", "ringOffset", "speed", "elapsed"]) game[key] = saved[key];
         game.running = false;
         game.energy = 0;
-        game.stage = Math.floor(game.score / (dailyTrack.levelScore || STAGE)) + 1;
+        game.stage = Math.floor(game.score / runOptions.levelScore) + 1;
         extend(game.nodes, game.distance + height * 2, game.random);
         best = saved.best;
         started = true;
@@ -1261,7 +1260,7 @@
           runDistance = Math.floor((game?.distance || 0) / 10),
           runSize = Math.round(game?.ringRadius || 0),
           runSpeed = ((game?.speed || 54) / 54).toFixed(1),
-          runLevel = Math.floor((game?.score || 0) / (dailyTrack?.levelScore || STAGE)) + 1,
+          runLevel = Math.floor((game?.score || 0) / runOptions.levelScore) + 1,
           shareUrl = ThreadTracks.shareUrl(ThreadTracks.trackUrl(
             runMode === "daily" ? "daily" : "generated",
             runMode === "daily" ? runTrack || 1 : runSeed,
@@ -1431,7 +1430,7 @@
           bottom = height - 150,
           ringY = Math.min(height * 0.6, height - 225),
           cr = Math.min(width * 0.4, 190),
-          stage = Math.floor(g.score / (dailyTrack?.levelScore || STAGE)) + 1,
+          stage = Math.floor(g.score / runOptions.levelScore) + 1,
           s = g.shapeSequence ? g.shapeSequence[(stage - 1) % g.shapeSequence.length] : (stage - 1 + (g.shapeOffset || 0)) % 4,
           z = Math.max(0.74, 1 - (stage - 1) * 0.024),
           sw = [1, 0.92, 0.68, TRIANGLE_REACH][s] * z,
@@ -1535,7 +1534,7 @@
                 }
               }
             }
-          const ns = Math.floor(g.score / (dailyTrack?.levelScore || STAGE)) + 1;
+          const ns = Math.floor(g.score / runOptions.levelScore) + 1;
           if (ns > g.stage) {
             g.stage = ns;
             sound("level");

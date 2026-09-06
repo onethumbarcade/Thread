@@ -26,6 +26,7 @@
     #today .daily-note{margin-top:26px;font-size:13px;line-height:1.5}
     #today .fingerprint>span{display:grid;grid-template-rows:minmax(2.4em,auto) auto;font-size:13px;line-height:1.2;letter-spacing:.45px;border-color:var(--neon);box-shadow:0 0 22px color-mix(in srgb,var(--neon) 28%,transparent)}
     #today .fingerprint .stat-label{font:inherit;align-self:center}
+    .hero #daily-level-score{margin-top:10px;color:var(--neon)}
     .hero .daily-frequencies{display:grid;gap:3px;margin:12px 0 0;padding-top:12px;border-top:1px solid #55f4e633;color:#a9bedc;font-size:13px;line-height:1.6;text-align:left}
     .daily-frequencies .frequency-row{display:flex;align-items:baseline;gap:8px}
     .daily-frequencies .frequency-row::after{content:"";order:1;flex:1;border-bottom:1px dotted #a9bedc80}
@@ -59,7 +60,7 @@
     </section>
     <section class="card view" id="today">
       <div class="guide-head"><button class="back" data-go="home">‹</button><div class="guide-title" id="today-id">TODAY’S TRACK: #1</div></div>
-      <div class="hero"><div class="date" id="today-date"></div><h3>THE DAILY THREAD</h3><p id="daily-rules">One laser. One layout. One worldwide leaderboard.</p><dl class="daily-frequencies" id="daily-frequencies" aria-label="Item frequencies"></dl></div>
+      <div class="hero"><div class="date" id="today-date"></div><h3>THE DAILY THREAD</h3><p id="daily-rules">One laser. One layout. One worldwide leaderboard.</p><p id="daily-level-score"></p><dl class="daily-frequencies" id="daily-frequencies" aria-label="Item frequencies"></dl></div>
       <div class="fingerprint"><span><small class="stat-label">STARTING SHAPE</small><b id="track-code">—</b></span><span><small class="stat-label">ATTEMPTS</small><b id="attempts">0</b></span><span><small class="stat-label">PERSONAL BEST</small><b id="daily-best">—</b></span></div>
       <p class="leaderboard-status score-sync-status" id="today-score-status" role="status"></p>
       <button class="action" id="play-daily">PLAY TODAY’S TRACK</button>
@@ -69,7 +70,7 @@
     </section>
     <section class="card view" id="generate">
       <div class="guide-head"><button class="back" data-go="home">‹</button><div class="guide-title">GENERATE TRACK</div></div>
-      <div class="hero" style="--neon:#ff55d6"><p>Adjust item frequencies, choose tracker shapes, and build your own track.</p></div>
+      <div class="hero" style="--neon:#ff55d6"><p>Choose tracker shapes, points per level, and item frequencies to build your own track.</p></div>
       <button class="action secondary" data-go="powerups" id="customize-track">CUSTOMIZE TRACK</button>
       <p id="generated-rules"></p>
       <button class="action" id="new-seed">GENERATE NEW TRACK</button>
@@ -119,19 +120,20 @@
   <div class="ad">DISPLAY AD AREA</div>
   <script src="assets/menu-music.js?v=continuous-1"></script>
   <audio id="menu-music" loop preload="auto" src="assets/thread-menu.mp3?v=neon-current-1"></audio>
-  <script src="assets/menu-panels.js?v=track-options-1"></script>
-  <script src="assets/track-sharing.js?v=native-app-1"></script>
+  <script src="assets/menu-panels.js?v=level-score-1"></script>
+  <script src="assets/track-sharing.js?v=level-score-1"></script>
   <script src="assets/daily-tracks.js?v=pacific-midnight-1"></script>
   <script src="assets/leaderboard.js?v=archive-ranks-1"></script>
   <script src="assets/power-ups.js?v=track-options-1"></script>
-  <script src="assets/track-options.js?v=daily-variety-2"></script>
-  <script src="assets/power-up-menu.js?v=track-options-1"></script>
+  <script src="assets/track-options.js?v=level-score-1"></script>
+  <script src="assets/power-up-menu.js?v=level-score-1"></script>
   <script>
     const now=new Date(),day=ThreadDaily.today(now),fmt=new Intl.DateTimeFormat(undefined,{weekday:'long',month:'long',day:'numeric',timeZone:ThreadDaily.timeZone});
     const dailyTrack=ThreadDaily.getTrack(day),dailyShape=dailyTrack.startingShapeName,attempts=Number(localStorage.getItem(`thread-daily-attempts-${day}`)||0);
     document.querySelector('#daily-rules').textContent=dailyTrack.description;
     const frequencyLabels=['Off','Rare','Normal','Often'];
-    const dailyOptions=ThreadTrackOptions.normalize(dailyTrack.options);
+    const dailyOptions=ThreadTrackOptions.normalize({...dailyTrack.options,levelScore:dailyTrack.levelScore});
+    document.querySelector('#daily-level-score').textContent=ThreadTrackOptions.describeLevelScore(dailyOptions);
     const frequencyItems=[
       ['Growth Orbs',dailyOptions.bonuses[0]],
       ['Bombs',dailyOptions.bonuses[2]],
@@ -162,6 +164,6 @@
   <script src="assets/result-navigation.js?v=native-app-1"></script>
   <script src="assets/track-archive.js?v=archive-ranks-1"></script>
   <script src="assets/leaderboard-menu.js?v=rank-prefix-1"></script>
-  <script src="assets/generated-track-menu.js?v=native-app-1"></script>
+  <script src="assets/generated-track-menu.js?v=level-score-1"></script>
 </body>
 </html>

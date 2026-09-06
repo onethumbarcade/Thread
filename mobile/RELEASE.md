@@ -1,5 +1,13 @@
 # Mobile conversion
 
+## Version 0.1.17
+
+- Add a custom-track slider for 10,000–30,000 points per level, defaulting to 20,000.
+- Keep the chosen threshold in saved setups, shared links, gameplay, and retries.
+- Show each daily track's actual level-up threshold below its shape description.
+- Remove the fixed threshold statement from the Scoring Guide.
+- Replace cake with pineapple at the same 250-point value and label its frequency slider Fruit.
+
 ## Version 0.1.16
 
 - Center the update time and Top 50 Threaders status across the Leaderboard card.

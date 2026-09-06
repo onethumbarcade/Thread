@@ -7,8 +7,8 @@ const { game, gameScript } = require('./game-harness.cjs');
 const read = name => fs.readFileSync(path.join(__dirname, '..', name), 'utf8');
 const value = (run, code) => vm.runInContext(code, run.context);
 const json = (run, code) => JSON.parse(value(run, `JSON.stringify(${code})`));
-function menu(navigator = {}) {
-  const run = game('?mode=generated', navigator);
+function menu(navigator = {}, storage = {}) {
+  const run = game('?mode=generated', navigator, 844, { storage });
   run.context.location = { href: 'https://onethumbarcade.github.io/Thread/update-2-preview.html', search: '' };
   const powerInputs = run.context.ThreadPowerUps.kinds.map(kind => {
     const input = run.get('mix-' + kind); input.dataset.powerRate = kind; return input;
@@ -31,6 +31,9 @@ test('customize → confirm → generate → play/share preserves every choice f
   const oldCode = owner.get('#seed').textContent;
   select(owner, '#starting-shape', '3'); select(owner, '#shape-mode', 'fixed');
   rates(owner.bonusInputs, '030'); rates(owner.powerInputs, '300000');
+  owner.get('#level-score').value = '17000'; owner.get('#level-score').oninput();
+  assert.equal(owner.get('#level-score-value').textContent, '17,000');
+  assert.equal(owner.get('#level-score')['aria-valuetext'], '17,000 points');
   owner.get('#confirm-power-mix').onclick();
   assert.equal(owner.context.location.href, href);
   assert.equal(owner.get('#seed').textContent, oldCode);
@@ -43,16 +46,20 @@ test('customize → confirm → generate → play/share preserves every choice f
   assert.equal(owner.get('#play-generated').disabled, false);
   assert(owner.get('#generated-rules').textContent.includes('Triangle every level'));
   assert(owner.get('#generated-rules').textContent.includes('Fruit: Often'));
+  assert(owner.get('#generated-rules').textContent.includes('New level every 17,000 points.'));
+  const reopened = menu({}, Object.fromEntries(owner.storage));
+  assert.equal(Number(reopened.get('#level-score').value), 17000);
   await owner.get('#share-track').onclick();
   const shared = new URL(payload.url);
   assert.equal(shared.searchParams.get('shapes'), '3');
   assert.equal(shared.searchParams.get('bonuses'), '030');
   assert.equal(shared.searchParams.get('powers'), '300000');
+  assert.equal(shared.searchParams.get('levelScore'), '17000');
   owner.get('#play-generated').onclick();
   assert.equal(owner.context.location.href, payload.url);
   const a = game(shared.search, {}, 600);
-  const b = game(shared.search, {}, 1200, { storage: { 'thread-track-options': JSON.stringify({ shapes: '0', bonuses: '303', powers: '000003' }) } });
-  assert.deepEqual(json(a, 'runOptions'), { powers: '300000', shapes: '3', bonuses: '030' });
+  const b = game(shared.search, {}, 1200, { storage: { 'thread-track-options': JSON.stringify({ shapes: '0', bonuses: '303', powers: '000003', levelScore: 29000 }) } });
+  assert.deepEqual(json(a, 'runOptions'), { powers: '300000', shapes: '3', bonuses: '030', levelScore: 17000 });
   assert.deepEqual(json(a, 'runOptions'), json(b, 'runOptions'));
   const generation = gameScript.slice(gameScript.indexOf('          extend(g.nodes, g.distance + height * 2'), gameScript.indexOf('          const pace ='));
   for (const [run, increment] of [[a,113],[b,809]]) value(run, `{const g=game,dt=0;for(g.distance=0;g.distance<30000;g.distance+=${increment}){${generation}}}`);
@@ -89,8 +96,10 @@ test('shape controls support fixed shapes and custom repeating orders, including
   assert.equal(editor.get('#shape-sequence').hidden, true);
   editor.get('#confirm-power-mix').onclick();
   assert.equal(editor.context.ThreadPowerUpMenu.getOptions().shapes, '3');
+  editor.get('#level-score').value = '30000'; editor.get('#level-score').oninput();
   editor.get('#reset-power-mix').onclick(); editor.get('#confirm-power-mix').onclick();
-  assert.deepEqual(JSON.parse(editor.storage.get('thread-track-options')), { powers:'222222', shapes:'0123', bonuses:'222' });
+  assert.equal(Number(editor.get('#level-score').value), 20000);
+  assert.deepEqual(JSON.parse(editor.storage.get('thread-track-options')), { powers:'222222', shapes:'0123', bonuses:'222', levelScore:20000 });
   assert([...editor.powerInputs,...editor.bonusInputs].every(input=>input.value==='2'&&input['aria-valuetext']==='Normal'));
 });
 
@@ -128,14 +137,54 @@ test('turning all collectibles off does not suppress powers; changing their rate
 });
 
 test('daily rules ignore custom shapes and collectibles, and malformed shared settings use defaults', () => {
-  const a=game('?mode=daily&track=3'), b=game('?mode=daily&track=3&shapes=0&bonuses=000&powers=000000',{},844,{storage:{'thread-track-options':JSON.stringify({shapes:'0',bonuses:'333',powers:'333333'})}});
+  const a=game('?mode=daily&track=3'), b=game('?mode=daily&track=3&shapes=0&bonuses=000&powers=000000&levelScore=30000',{},844,{storage:{'thread-track-options':JSON.stringify({shapes:'0',bonuses:'333',powers:'333333'})}});
   for(const field of ['shapeSequence','pickups','bonuses','nodes']) assert.deepEqual(json(a,'game.'+field),json(b,'game.'+field));
   assert.deepEqual(json(b,'game.shapeSequence'),json(b,'dailyTrack.shapes'));
   assert.equal(value(b,'runMix'),value(b,'dailyTrack.options.powers'));
+  assert.equal(value(b,'runOptions.levelScore'),value(b,'dailyTrack.levelScore'));
   assert.equal(value(b,'ThreadTrackOptions.describeFrequencies()'),'Growth Orbs: Normal · Fruit: Normal · Bombs: Normal. Power-ups: Normal.');
   assert.match(value(b,'ThreadTrackOptions.describeFrequencies(ThreadTrackOptions.read())'),/Growth Orbs: Often/);
   for(const shapes of ['', '4', '012301230', '<script>']) {
     const run=game('?mode=generated&shapes='+encodeURIComponent(shapes)+'&bonuses=bad&powers=no');
-    assert.deepEqual(json(run,'runOptions'),{ powers:'222222', shapes:'0123', bonuses:'222' });
+    assert.deepEqual(json(run,'runOptions'),{ powers:'222222', shapes:'0123', bonuses:'222', levelScore:20000 });
   }
+});
+
+
+test('custom level thresholds drive shape, HUD, score sharing, and retries at exact boundaries', async () => {
+  for (const threshold of [10000, 17000, 30000]) {
+    let payload;
+    const run = game(`?mode=generated&seed=N3ON-4821&shapes=13&bonuses=000&powers=000000&levelScore=${threshold}`, { share: async data => { payload = data; } });
+    const rendered = [], original = run.context.shape;
+    run.context.shape = (...args) => { rendered.push(args[3]); original(...args); };
+    for (const [score, level] of [[threshold - 1, 1], [threshold, 2], [2 * threshold - 1, 2], [2 * threshold, 3]]) {
+      value(run, `game.nodes=Array(200).fill(0);game.score=${score};game.energy=100;game.ringOffset=0;lastHud=-1000;`);
+      run.step(0);
+      assert.equal(value(run, 'game.stage'), level);
+      assert.equal(Number(run.get('#level').textContent), level);
+      assert.equal(rendered.at(-1), [1, 3][(level - 1) % 2]);
+    }
+    await run.get('#share-score').onclick();
+    assert.match(payload.text, /Level 3/);
+    assert.equal(new URL(payload.url).searchParams.get('levelScore'), String(threshold));
+    run.get('#again').onclick();
+    assert.equal(value(run, 'game.stage'), 1);
+    assert.equal(value(run, 'runOptions.levelScore'), threshold);
+  }
+});
+
+test('old shared links keep 20,000 points while bare codes use saved choices and invalid thresholds fall back', () => {
+  const saved = { 'thread-track-options': JSON.stringify({ shapes: '3', bonuses: '000', powers: '000000', levelScore: 27000 }) };
+  const run = game('?mode=generated&seed=N3ON-4821', {}, 844, { storage: saved });
+  assert.equal(value(run, 'runOptions.levelScore'), 27000);
+  const old = game('?mode=generated&seed=N3ON-4821&shapes=13&bonuses=222&powers=222222', {}, 844, { storage: saved });
+  assert.equal(value(old, 'runOptions.levelScore'), 20000);
+  const thresholdOnly = game('?mode=generated&levelScore=16000', {}, 844, { storage: saved });
+  assert.deepEqual(json(thresholdOnly, 'runOptions'), { powers: '222222', shapes: '0123', bonuses: '222', levelScore: 16000 });
+  for (const bad of ['', '0', '-10000', '9000', '31000', '16001', 'Infinity', 'NaN', 'no']) {
+    const invalid = game('?mode=generated&levelScore=' + bad, {}, 844, { storage: saved });
+    assert.equal(value(invalid, 'runOptions.levelScore'), 20000, bad);
+  }
+  const previousSetup = game('?mode=generated', {}, 844, { storage: { 'thread-track-options': JSON.stringify({ shapes: '1', bonuses: '303', powers: '012301' }) } });
+  assert.equal(value(previousSetup, 'runOptions.levelScore'), 20000);
 });

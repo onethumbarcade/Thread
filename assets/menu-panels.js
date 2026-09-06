@@ -23,7 +23,7 @@
       <div class="rank"><b>🍒</b><span>Cherry</span><b>+100</b></div>
       <div class="rank"><b>🍓</b><span>Strawberry</span><b>+125</b></div>
       <div class="rank"><b>🍌</b><span>Banana</span><b>+150</b></div>
-      <div class="rank"><b>🍰</b><span>Cake</span><b>+250</b></div>
+      <div class="rank"><b>🍍</b><span>Pineapple</span><b>+250</b></div>
       <div class="rank"><b>💣</b><span>−35 energy and −8px size</span><b>0 pts</b></div>
       <div class="rank"><b>★</b><span>Invincibility: blocks bombs, energy loss and shrinking</span><b>7 sec</b></div>
       <div class="rank"><b>⚡</b><span>Blaster: automatically shoots approaching bombs</span><b>12 sec</b></div>
@@ -32,13 +32,12 @@
       <div class="rank"><b>2×</b><span>Double points: threading, fruit and growth orbs</span><b>10 sec</b></div>
       <div class="rank"><b>+</b><span>Energy cell: instantly restores full health</span><b>100%</b></div>
     </div>
-    <div class="holiday">NEW LEVEL EVERY 20,000 POINTS</div>
     <p class="note">Power-ups sit farther off the laser than fruit. Swerve to collect them, then return to the laser to keep scoring. Timed powers can overlap; collecting the same power refreshes its timer. Blasted bombs give no points.</p>
     <p class="note">Maximum scores come from precise centering, surviving higher speed multipliers and taking calculated risks for collectibles.</p>
   `,
     powerups: `
     <div class="guide-head"><button class="back" data-go="generate" aria-label="Back to Generate Track">‹</button><div class="guide-title">TRACK OPTIONS</div></div>
-    <p class="mix-intro">Build your own challenge. Choose the shapes and item frequencies, then generate a track to play or share.</p>
+    <p class="mix-intro">Build your own challenge. Choose the shapes, points per level, and item frequencies, then generate a track to play or share.</p>
     <h3 class="track-section-title">SHAPES</h3>
     <label class="shape-label" for="starting-shape">Starting Shape</label>
     <select class="shape-select" id="starting-shape">${["Square", "Circle", "Diamond", "Triangle"].map((name,i)=>`<option value="${i}">${name}</option>`).join("")}</select>
@@ -49,10 +48,17 @@
       <button class="shape-add" id="add-shape">+ Add Shape</button>
     </div>
     <p class="mix-note" id="shape-summary"></p>
-    <h3 class="track-section-title">FRUIT & BONUSES</h3>
+    <h3 class="track-section-title">LEVELING UP</h3>
+    <div class="power-mix-row">
+      <label for="level-score">Points per Level<output id="level-score-value" for="level-score">20,000</output></label>
+      <small id="level-score-help">Score this many points to reach each new level.</small>
+      <input id="level-score" type="range" min="10000" max="30000" step="1000" value="20000" aria-describedby="level-score-help" aria-valuetext="20,000 points">
+      <div class="mix-scale" aria-hidden="true"><span id="level-score-min">10,000</span><span>20,000</span><span id="level-score-max">30,000</span></div>
+    </div>
+    <h3 class="track-section-title">ITEMS</h3>
     ${[
       ["orb", "◎ Growth Orbs", "Increase the tracker size"],
-      ["fruit", "🍒 Fruit & Treats", "Cherries, strawberries, bananas and cake"],
+      ["fruit", "🍒 Fruit", "Cherries, strawberries, bananas and pineapples"],
       ["bomb", "💣 Bombs", "Off-track hazards for an extra challenge"],
     ].map(([kind,label,description])=>`<div class="power-mix-row"><label for="bonus-${kind}">${label}<output id="bonus-${kind}-value" for="bonus-${kind}">Normal</output></label><small>${description}</small><input id="bonus-${kind}" data-bonus-rate="${kind}" type="range" min="0" max="3" step="1" value="2" aria-valuetext="Normal"><div class="mix-scale" aria-hidden="true"><span>Off</span><span>Rare</span><span>Normal</span><span>Often</span></div></div>`).join("")}
     <h3 class="track-section-title">POWER-UPS</h3>

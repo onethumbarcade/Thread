@@ -13,7 +13,7 @@
   function describe(options) {
     if (!globalThis.ThreadTrackOptions) return;
     const summary = ThreadTrackOptions.describe(options);
-    document.querySelector("#generated-rules").textContent = `${summary} ${ThreadTrackOptions.describeFrequencies(options)}`;
+    document.querySelector("#generated-rules").textContent = `${summary} ${ThreadTrackOptions.describeLevelScore(options)} ${ThreadTrackOptions.describeFrequencies(options)}`;
   }
 
   function clearFeedback() {
@@ -83,7 +83,7 @@
     try {
       const result = await ThreadTracks.share({
         title: "THREAD track challenge",
-        text: `Try my track in THREAD by One Thumb Arcade!\nTrack code: ${code}\nOpen this link to play the same course, shapes, fruit, bombs and power-ups.`,
+        text: `Try my track in THREAD by One Thumb Arcade!\nTrack code: ${code}\nOpen this link to play the same course, shapes, level-up points, fruit, bombs and power-ups.`,
         url,
       });
       if (result === "shared") status.textContent = "Track shared.";

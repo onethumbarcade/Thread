@@ -6,6 +6,10 @@
   const bonusKinds = ["orb", "fruit", "bomb"], labels = ["Off", "Rare", "Normal", "Often"];
   const status = document.querySelector("#power-mix-status");
   const start = document.querySelector("#starting-shape"), mode = document.querySelector("#shape-mode");
+  const levelScore = document.querySelector("#level-score");
+  for (const [key, value] of Object.entries(ThreadTrackOptions.levelScoreRange)) levelScore[key] = value;
+  document.querySelector("#level-score-min").textContent = ThreadTrackOptions.levelScoreRange.min.toLocaleString();
+  document.querySelector("#level-score-max").textContent = ThreadTrackOptions.levelScoreRange.max.toLocaleString();
   let saved = ThreadTrackOptions.read(), draft, first, changes, next;
   function load(value) {
     draft = ThreadTrackOptions.normalize(value);
@@ -22,6 +26,9 @@
         document.querySelector(`#${input.id}-value`).textContent = labels[+rate];
       });
     }
+    levelScore.value = draft.levelScore;
+    levelScore.setAttribute("aria-valuetext", `${draft.levelScore.toLocaleString()} points`);
+    document.querySelector("#level-score-value").textContent = draft.levelScore.toLocaleString();
     start.value = first; mode.value = changes ? "cycle" : "fixed";
     document.querySelector("#shape-sequence").hidden = !changes;
     for (let i = 0; i < 7; i++) {
@@ -40,6 +47,7 @@
       draft[key] = values.join(""); changed();
     });
   }
+  levelScore.oninput = () => { draft.levelScore = Number(levelScore.value); changed(); };
   start.onchange = () => { first = start.value; changed(); };
   mode.onchange = () => { changes = mode.value === "cycle"; changed(); };
   for (let i = 0; i < 7; i++) {
@@ -49,7 +57,7 @@
   document.querySelector("#add-shape").onclick = () => { if (next.length < 7) next.push(String((+next.at(-1) + 1) % 4)); changed(); };
   document.querySelector("#reset-power-mix").onclick = () => {
     load(ThreadTrackOptions.defaults); refresh();
-    status.textContent = "Default shape cycle restored. All item and power-up frequencies set to Normal. Select Confirm to save.";
+    status.textContent = "Default shape cycle and 20,000 points per level restored. All item and power-up frequencies set to Normal. Select Confirm to save.";
   };
   document.querySelector("#confirm-power-mix").onclick = () => {
     const selected = options();

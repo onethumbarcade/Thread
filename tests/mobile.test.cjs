@@ -42,18 +42,23 @@ test('native persistence serializes overlapping writes and surfaces failed saves
 });
 test('app share links carry the complete mix and only open valid tracks', async () => {
   const { sharedTrackUrl, localTrackUrl } = await import('../mobile/links.mjs');
-  const source = 'https://localhost/index.html?mode=generated&seed=N3ON-4821&powers=012301&shapes=13&bonuses=210&result=private';
+  const source = 'https://localhost/index.html?mode=generated&seed=N3ON-4821&powers=012301&shapes=13&bonuses=210&levelScore=17000&result=private';
   const link = sharedTrackUrl(source);
   assert.match(link, /^onethumbarcade-thread:\/\/play\?/);
   assert(!link.includes('localhost')); assert(!link.includes('result'));
   const restored = new URL(localTrackUrl(link, 'capacitor://localhost/update-2-preview.html', 2));
   assert.equal(restored.protocol, 'capacitor:');
-  for (const key of ['mode', 'seed', 'powers', 'shapes', 'bonuses']) {
+  const legacy = new URL(localTrackUrl('onethumbarcade-thread://play?mode=generated&seed=N3ON-4821', 'https://localhost/', 2));
+  assert.equal(legacy.searchParams.get('levelScore'), '20000');
+  for (const key of ['mode', 'seed', 'powers', 'shapes', 'bonuses', 'levelScore']) {
     assert.equal(restored.searchParams.get(key), new URL(source).searchParams.get(key));
   }
   assert.equal(localTrackUrl('onethumbarcade-thread://play?mode=daily&track=2', 'https://localhost/', 2), 'https://localhost/index.html?mode=daily&track=2');
   for (const bad of ['https://evil.test/?mode=daily&track=2', 'onethumbarcade-thread://evil?mode=daily&track=2',
     'onethumbarcade-thread://play?mode=daily&track=3', 'onethumbarcade-thread://play?mode=daily&track=-1',
+    'onethumbarcade-thread://play?mode=generated&seed=N3ON-4821&levelScore=9000',
+    'onethumbarcade-thread://play?mode=generated&seed=N3ON-4821&levelScore=31000',
+    'onethumbarcade-thread://play?mode=generated&seed=N3ON-4821&levelScore=16001',
     'onethumbarcade-thread://play?mode=generated&seed=N3ON-4821&powers=bad']) {
     assert.equal(localTrackUrl(bad, 'https://localhost/', 2), null);
   }
