@@ -59,17 +59,19 @@ public class LaunchTest {
     }
 
     private JSONObject musicState(ActivityScenario<MainActivity> scenario) throws Exception {
-        evaluate(scenario, "window.musicSnapshot=null;ThreadNative.menuMusic.getState().then(s=>window.musicSnapshot=s)");
+        evaluate(scenario, "window.musicSnapshot=null;ThreadNative.menuMusic.getState().then(s=>window.musicSnapshot=s).catch(e=>window.musicSnapshot={error:String(e)})");
         awaitReady(scenario, "!!window.musicSnapshot");
         String encoded = evaluate(scenario, "JSON.stringify(window.musicSnapshot)");
-        return new JSONObject(new JSONArray("[" + encoded + "]").getString(0));
+        JSONObject snapshot = new JSONObject(new JSONArray("[" + encoded + "]").getString(0));
+        assertTrue("Native music state failed: " + snapshot, !snapshot.has("error"));
+        return snapshot;
     }
 
     @Test
     public void cardMusicSurvivesSummaryHomeAndLeaderboardNavigation() throws Exception {
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
             awaitReady(scenario, "!!window.ThreadNative?.ready");
-            evaluate(scenario, "ThreadStorage.setItem('thread-settings',JSON.stringify({music:true,sfx:false,haptics:false}));ThreadNative.navigate('update-2-preview.html')");
+            evaluate(scenario, "ThreadStorage.setItem('thread-settings',JSON.stringify({music:true,sfx:false,haptics:false}));ThreadNative.ready=false;ThreadNative.navigate('update-2-preview.html')");
             awaitReady(scenario, "!!(window.ThreadNative?.ready && document.querySelector('#home.active') && settings.music)");
             assertTrue(musicState(scenario).getBoolean("playing"));
             SystemClock.sleep(1400);
