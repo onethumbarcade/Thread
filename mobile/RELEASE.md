@@ -1,5 +1,10 @@
 # Mobile conversion
 
+## Version 0.1.15
+
+- Fill the pause button with the current laser color, updating automatically with each level.
+- Keep a dark pause symbol for contrast and retain the solid fill while pressing the button.
+
 ## Version 0.1.13
 
 - Apply the approved threaded-ring logo to the title screens and card branding.

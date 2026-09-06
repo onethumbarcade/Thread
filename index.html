@@ -323,8 +323,8 @@
         padding: 10px;
         border: 1px solid var(--laser, #52e9ff);
         border-radius: 14px;
-        background: #0b1425e8;
-        color: var(--laser, #52e9ff);
+        background: var(--laser, #52e9ff);
+        color: #06101b;
         box-shadow: inset 0 1px #ffffff18, 0 0 14px var(--laser-glow, #18cfff44);
         pointer-events: auto;
         touch-action: manipulation;
@@ -332,7 +332,7 @@
       }
       .pause-game[hidden] { display: none; }
       .pause-game svg { width: 22px; height: 22px; fill: currentColor; }
-      .pause-game:active { background: #183149; }
+      .pause-game:active { transform: scale(.96); }
       .pause-game:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
       #pause { z-index:20; box-shadow: 0 0 0 100vmax #02040dbb, 0 0 34px #20dbff33; }
       #pause button { width:100%; margin-top: 16px; }
