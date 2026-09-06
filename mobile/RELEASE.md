@@ -6,6 +6,7 @@
 - Keep one native audio player through summary, Home, leaderboards, and all card navigation.
 - Pause without rewinding for gameplay, mute, and backgrounding; resume from that position.
 - Bundle a lossless loop without encoder padding at the song boundary.
+- Use Android’s supported legacy callback bridge for reliable full-page navigation: the newer reply proxy can deliver a fast Preferences response to the previous document.
 
 ## Version 0.1.11
 
