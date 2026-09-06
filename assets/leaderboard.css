@@ -19,6 +19,7 @@
 .board-table .rank{border-bottom-color:#ffffff14;font-variant-numeric:tabular-nums}
 .board-table .rank.you{border-color:#50e8ee88}
 .board-columns{padding-top:8px;padding-bottom:8px;color:#9daed0;font-size:12px;font-weight:800;line-height:1.4}
+.board-columns> :nth-child(2),.board-table .rank> :nth-child(2){text-align:center}
 .board-columns> :last-child,.board-table .rank> :last-child{text-align:right}
 @media(max-width:380px){.board-table{--rank-column:30px;--score-column:74px;--board-gap:6px}.board-columns{font-size:11px}}
 

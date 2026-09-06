@@ -1,5 +1,9 @@
 # Mobile conversion
 
+## Version 0.1.6
+
+- Center the Threader ID column heading and player IDs on the leaderboard, including YOU.
+
 ## Version 0.1.5
 
 - Show the daily track leader’s score as Global Best in the post-game summary.
