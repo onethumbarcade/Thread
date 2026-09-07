@@ -41,11 +41,11 @@ function game(search, navigator = {}, height = 844, options = {}) {
     AudioContext: options.AudioContext || class { currentTime = 0; destination = node(); resume() { return Promise.resolve(); } createGain() { return node(); } createOscillator() { return node(); } },
     Path2D: class { moveTo() {} lineTo() {} },
     addEventListener(type, callback) { if (!listeners.has(type)) listeners.set(type, []); listeners.get(type).push(callback); },
-    requestAnimationFrame() {}, setTimeout() {},
+    requestAnimationFrame() {}, setTimeout() {}, clearTimeout() {},
   });
   context.window = context;
   for (const id of ['level', 'ring', 'speed', 'score', 'energy']) context[id] = get('#' + id);
-  for (const name of ['menu-music', 'track-options', 'collectibles', 'track-sharing', 'daily-tracks', 'progress', 'progress-ui', 'daily-music', 'power-ups', 'result-navigation', 'game-renderer']) vm.runInContext(read(`assets/${name}.js`), context);
+  for (const name of ['menu-music', 'pause-audio', 'track-options', 'collectibles', 'track-sharing', 'daily-tracks', 'progress', 'progress-ui', 'daily-music', 'power-ups', 'result-navigation', 'game-renderer']) vm.runInContext(read(`assets/${name}.js`), context);
   vm.runInContext(gameScript, context);
   let time = 0;
   return { context, get, storage, session, history, listeners, step(dt = .016) { time += dt * 1000; vm.runInContext(`frame(${time})`, context); } };

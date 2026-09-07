@@ -7,24 +7,37 @@ const { game } = require('./game-harness.cjs');
 const context = vm.createContext({});
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../assets/daily-music.js'), 'utf8'), context);
 const music = context.ThreadDailyMusic;
-test('card theme plays while paused, honors mute and backgrounding, and stops before gameplay resumes', () => {
+test('pause stays free of menu music through music settings, backgrounding, and resume', () => {
   const run = game('?mode=daily&track=2');
   const theme = run.get('#menu-bgm');
   assert.equal(theme.paused, true);
   run.get('#pause-game').click();
-  assert.equal(theme.paused, false);
+  assert.equal(theme.paused, true);
   run.get('setting-music').click();
   assert.equal(theme.paused, true);
   run.get('setting-music').click();
-  assert.equal(theme.paused, false);
+  assert.equal(theme.paused, true);
   for (const active of [false, true]) {
     for (const listener of run.listeners.get('thread:app-state')) listener({ detail: { isActive: active } });
-    assert.equal(theme.paused, !active);
+    assert.equal(theme.paused, true);
   }
   run.get('#resume-game').click();
   assert.equal(theme.paused, true);
   assert.equal(run.storage.get('thread-daily-attempts-2'), '1');
 });
+test('repeated card interactions and Home never pause or rewind the menu song', () => {
+  const run = game('?mode=daily&track=2');
+  vm.runInContext('game.running=false;showResult(false)', run.context);
+  const theme = run.get('#menu-bgm');
+  theme.currentTime = 37.25;
+  const pauses = theme.pauses;
+  vm.runInContext('startMenuMusic();startMenuMusic()', run.context);
+  assert.equal(theme.pauses, pauses);
+  assert.equal(theme.currentTime, 37.25);
+  run.get('#home-button').click();
+  assert.equal(theme.pauses, pauses);
+});
+
 const param = () => ({ value: 0,
   setValueAtTime(value, time) { assert(Number.isFinite(value) && time >= 0); },
   linearRampToValueAtTime(value, time) { assert(Number.isFinite(value) && time >= 0); },

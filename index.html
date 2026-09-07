@@ -791,6 +791,7 @@
       src="assets/thread-menu.mp3?v=neon-current-1"
     ></audio>
     <script src="assets/menu-music.js?v=continuous-1"></script>
+    <script src="assets/pause-audio.js?v=soft-cue-1"></script>
     <script src="assets/menu-panels.js?v=retention-1"></script>
     <script src="assets/track-sharing.js?v=level-score-1"></script>
     <script src="assets/daily-tracks.js?v=pacific-midnight-1"></script>
@@ -852,6 +853,7 @@
         rankedSession,
         completedResult,
         optionsReturn,
+        pauseCue,
         gamePaused = false,
         appActive = !document.hidden;
       const runParams = new URLSearchParams(location.search),
@@ -1066,7 +1068,7 @@
         menuBgm.pause();
       }
       function startMenuMusic() {
-        if (!appActive || !settings.music || (started && game?.running && !gamePaused)) { stopMenuMusic(); return; }
+        if (!appActive || gamePaused || !settings.music || (started && game?.running)) { stopMenuMusic(); return; }
         menuBgm.volume = 0.42;
         menuBgm.play().catch(() => {});
       }
@@ -1167,6 +1169,10 @@
       }
       document.querySelector("#result-board-link").onclick = () => rememberResult();
       addEventListener("pageshow", event => { if (event.persisted) refreshResultRanking(); });
+      function startPauseCue(immediate = true) {
+        pauseCue ||= ThreadPauseAudio.create({ isEnabled: () => settings.sfx && appActive && gamePaused });
+        pauseCue.start({ immediate });
+      }
       function pauseGame() {
         if (!started || !game?.running || gamePaused) return;
         gamePaused = true;
@@ -1176,10 +1182,12 @@
         document.querySelector("#pause-game").disabled = true;
         document.querySelector("#resume-game").focus();
         audio?.suspend?.()?.catch(() => {});
-        startMenuMusic();
+        stopMenuMusic();
+        startPauseCue();
       }
       function resumeGame() {
         if (!appActive || !game?.running || !gamePaused) return;
+        pauseCue?.stop();
         gamePaused = false;
         pointer = false;
         previous = performance.now();
@@ -1194,11 +1202,14 @@
         appActive = active;
         if (!active) {
           pauseGame();
+          pauseCue?.stop();
           stopMenuMusic();
           audio?.suspend?.()?.catch(() => {});
-        } else if (!game?.running || gamePaused) startMenuMusic();
+        } else if (gamePaused) startPauseCue(false);
+        else if (!game?.running) startMenuMusic();
       }
       addEventListener("thread:app-state", event => appState(event.detail.isActive));
+      addEventListener("pagehide", () => pauseCue?.stop());
       addEventListener("visibilitychange", () => { if (!globalThis.ThreadNative?.isNative) appState(!document.hidden); });
       document.querySelector("#pause-game").onclick = pauseGame;
       document.querySelector("#resume-game").onclick = resumeGame;
@@ -1223,6 +1234,7 @@
         return true;
       };
       function begin() {
+        pauseCue?.stop();
         gamePaused = false;
         document.querySelector("#pause-game").hidden = false;
         document.querySelector("#pause-game").disabled = false;
@@ -1270,6 +1282,7 @@
       document.querySelector("#play").onclick = begin;
       document.querySelector("#again").onclick = begin;
       document.querySelector("#home-button").onclick = () => {
+        pauseCue?.stop();
         stopMusic();
         ThreadTracks.navigate("update-2-preview.html");
       };
@@ -1361,7 +1374,11 @@
                   : startMenuMusic()
                 : (stopMusic(), stopMenuMusic());
             }
-            if (k === "sfx" && settings.sfx) sound("orb");
+            if (k === "sfx") {
+              if (!settings.sfx) pauseCue?.stop();
+              else if (gamePaused) startPauseCue();
+              else sound("orb");
+            }
           }),
       );
       refreshOptions();
