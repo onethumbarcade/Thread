@@ -1,6 +1,6 @@
 /* Achievements share THREAD's neon card palette and stay outside gameplay. */
 .progress-entry, .daily-streak { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; min-height:48px; margin-top:18px; padding:10px 14px; border:1px solid #8e91ff80; border-radius:15px; background:linear-gradient(110deg,#102037,#231439); color:#dbddff; font:800 13px Inter,system-ui,sans-serif; letter-spacing:1px; cursor:pointer; }
-.progress-entry b { color:#76f3ff; font-size:13px; white-space:nowrap; }
+.progress-entry b { color:#fff; font-size:13px; white-space:nowrap; }
 .progress-entry svg, .daily-streak svg { width:25px; height:25px; flex:0 0 25px; color:#76f3ff; }
 .daily-streak { flex-wrap:wrap; gap:6px 9px; margin:15px 0 8px; border-color:#ffbd636b; color:#ffd88a; background:linear-gradient(110deg,#29203a,#171830); }
 .daily-streak svg { color:#ffd88a; }
@@ -35,10 +35,14 @@
 .progress-save-status { color:#ffc784; font-size:12px; line-height:1.5; text-align:center; }
 .progress-save-status:empty { display:none; }
 #result { touch-action:pan-y; overscroll-behavior:contain; }
-#result .run-progress { margin:18px 0 4px; text-align:center; }
+#result .run-progress { margin:18px 0 20px; text-align:center; }
 #result-progress-status { margin:0 0 6px; font-size:12px; color:#ffd58a; line-height:1.5; }
 #result-progress-status:empty { display:none; }
-#result #result-achievements { width:auto; min-height:44px; margin:0; padding:8px 12px; border:0; border-radius:10px; background:transparent; box-shadow:none; color:#76f3ff; font:750 13px Inter,system-ui,sans-serif; letter-spacing:.6px; }
+/* Override the result card’s shared gradient so white lettering stays readable. */
+.progress-entry, #result #result-achievements { width:100%; min-height:56px; margin:20px 0 0; padding:14px 12px; border:1px solid #ff8ae8 !important; border-radius:17px; background:#d41aa8 !important; box-shadow:0 5px 0 #870d69,0 0 20px #ff48ce44 !important; color:#fff; font:900 16px/1.3 Inter,system-ui,sans-serif; letter-spacing:1.3px; cursor:pointer; }
+#result #result-achievements { display:block; }
+.progress-entry { font-size:clamp(14px,4vw,16px); gap:8px; letter-spacing:1px; }
+.progress-entry svg { color:#fff; }
 .milestone-banner { position:relative; isolation:isolate; margin:0 0 13px; padding:15px; border:1px solid #ffdc88b3; border-radius:17px; background:linear-gradient(120deg,#392341,#132c39); box-shadow:0 0 19px #ffb65c24; text-align:left; }
 .milestone-banner[hidden] { display:none; }
 .milestone-kicker { color:#ffd88a; font-size:10px; font-weight:900; letter-spacing:1.4px; text-align:center; margin-bottom:10px; }
