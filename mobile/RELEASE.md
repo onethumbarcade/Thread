@@ -1,5 +1,10 @@
 # Mobile conversion
 
+## Version 0.1.20
+
+- Move View Achievements below Try Again and Home as a full-width pink button with bold white text and separate spacing.
+- Give the title-card Achievements button the same pink treatment directly below Leaderboards.
+
 ## Version 0.1.19
 
 - Keep pause screens free of music, preserving the current song for Continue.

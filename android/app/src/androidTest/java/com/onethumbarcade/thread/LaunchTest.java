@@ -97,6 +97,7 @@ public class LaunchTest {
             awaitReady(scenario, "!!(!game.running && ThreadProgress.snapshot().fruits===100 && !document.querySelector('#result').classList.contains('hidden'))");
             assertEquals("true", evaluate(scenario, "document.querySelector('#result-milestones').textContent.includes('Fruit Collector') && " +
                 "!document.querySelector('#result-milestones').classList.contains('celebrate')"));
+            evaluate(scenario, "document.querySelector('#result-achievements').scrollIntoView({block:'nearest',behavior:'instant'})");
             SystemClock.sleep(350);
             screenshot("thread-milestone.png");
             tap(scenario, "#result-achievements");
