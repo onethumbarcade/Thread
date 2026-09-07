@@ -99,8 +99,8 @@ public class LaunchTest {
                 "!document.querySelector('#result-milestones').classList.contains('celebrate')"));
             SystemClock.sleep(350);
             screenshot("thread-milestone.png");
-            evaluate(scenario, "document.querySelector('#result-achievements').click()");
-            awaitReady(scenario, "!!document.querySelector('#achievements.active')");
+            tap(scenario, "#result-achievements");
+            awaitReady(scenario, "!!document.querySelector('#achievements.active') && getComputedStyle(document.querySelector('#options-overlay')).display!=='none' && getComputedStyle(document.querySelector('#result')).display==='none'");
             assertEquals("true", evaluate(scenario, "[...document.querySelectorAll('.achievement.unlocked')].some(b=>b.textContent.includes('Fruit Collector'))"));
             SystemClock.sleep(350);
             screenshot("thread-achievements.png");
@@ -135,7 +135,7 @@ public class LaunchTest {
             String paused = evaluate(scenario, snapshot);
             SystemClock.sleep(700);
             assertEquals("Pause must freeze gameplay, power-ups, effects and gameplay music", paused, evaluate(scenario, snapshot));
-            assertTrue("Pause is a card and should play the menu theme", musicState(scenario).getBoolean("playing"));
+            assertEquals("Pause must not play the menu theme", false, musicState(scenario).getBoolean("playing"));
             screenshot("thread-paused.png");
             tap(scenario, "#resume-game");
             awaitReady(scenario, "!gamePaused && audio.state==='running' && document.querySelector('#pause').classList.contains('hidden')");

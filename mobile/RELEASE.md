@@ -1,5 +1,11 @@
 # Mobile conversion
 
+## Version 0.1.19
+
+- Keep pause screens free of music, preserving the current song for Continue.
+- Play a gentle two-note pause cue, with quieter reminders every 12 seconds.
+- Honor sound-effects settings and stop the cue on resume, Home, or backgrounding.
+
 ## Version 0.1.18
 
 - Track completed daily runs as a streak using Pacific calendar dates.
